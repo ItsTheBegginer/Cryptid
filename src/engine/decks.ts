@@ -76,6 +76,22 @@ export function importDeck(state: AppState, json: string): Result<AppState> {
   }
 
   const importedDeck = deck as Deck;
+
+  // Validate each card element has the minimum required fields before merging.
+  // A malformed element (missing deckId, box, dueDay, etc.) would silently produce
+  // corrupted state that crashes buildQueue and the scheduler.
+  for (const element of cards) {
+    if (
+      typeof element !== 'object' ||
+      element === null ||
+      typeof (element as Record<string, unknown>)['id'] !== 'string' ||
+      typeof (element as Record<string, unknown>)['deckId'] !== 'string' ||
+      typeof (element as Record<string, unknown>)['dueDay'] !== 'number' ||
+      ![1, 2, 3, 4, 5].includes((element as Record<string, unknown>)['box'] as number)
+    ) {
+      return { ok: false, error: 'Invalid card in import: missing required fields' };
+    }
+  }
   const importedCards = cards as Card[];
 
   // Skip deck if its id already exists; skip each card whose id already exists

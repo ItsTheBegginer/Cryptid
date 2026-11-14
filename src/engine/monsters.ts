@@ -36,12 +36,14 @@ export function bigfootView(cards: Card[], today: Day): MonsterView {
   return { id: 'bigfoot', strength, active: strength > 0 };
 }
 
-/** Checks all 4 monster views; appends any that reached strength 0 to state.defeated. */
+/** Checks all 4 monster views; appends any that reached strength 0 to state.defeated.
+ *  Requires active: true so monsters that were never activated (e.g. jerseyDevil with no exam deck)
+ *  are not counted as defeated before the player has engaged them. */
 export function updateDefeated(state: AppState, today: Day): AppState {
   const views = monsterViews(state, today);
   const alreadyDefeated = new Set<MonsterId>(state.defeated);
   const newlyDefeated = views
-    .filter((v) => v.strength === 0 && !alreadyDefeated.has(v.id))
+    .filter((v) => v.strength === 0 && v.active && !alreadyDefeated.has(v.id))
     .map((v) => v.id);
   if (newlyDefeated.length === 0) return state;
   return { ...state, defeated: [...state.defeated, ...newlyDefeated] };
