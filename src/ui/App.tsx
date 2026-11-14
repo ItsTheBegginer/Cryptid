@@ -6,7 +6,6 @@ import {
   deserialize,
   emptyState,
   exportDeck,
-  importDeck,
   MASTERED_BOX,
   monsterViews,
   recordStudy,
@@ -404,13 +403,13 @@ function DeckEditorScreen({
 
 // ─── StudySession ─────────────────────────────────────────────────────────────
 interface SessionState {
-  queue: Card[];         // remaining cards to show
+  queue: Card[];              // remaining cards to show
   currentIndex: number;
-  missed: Set<string>;   // ids answered wrong in this session
-  retried: Set<string>;  // ids already retried (prevent infinite requeueing)
-  correct: number;
-  wrong: number;
-  shown: boolean;        // answer revealed?
+  missed: Set<string>;        // ids answered wrong in this session
+  retried: Set<string>;       // ids already retried (prevent infinite requeueing)
+  correctIds: Set<string>;    // distinct cards whose final outcome was correct
+  wrongIds: Set<string>;      // distinct cards whose final outcome was wrong
+  shown: boolean;             // answer revealed?
 }
 
 function buildInitialSession(cards: Card[], day: number): SessionState {
@@ -419,8 +418,8 @@ function buildInitialSession(cards: Card[], day: number): SessionState {
     currentIndex: 0,
     missed: new Set(),
     retried: new Set(),
-    correct: 0,
-    wrong: 0,
+    correctIds: new Set(),
+    wrongIds: new Set(),
     shown: false,
   };
 }
@@ -469,11 +468,19 @@ function StudyScreen({
     setSession((prev) => {
       const newMissed = new Set(prev.missed);
       const newRetried = new Set(prev.retried);
+      const newCorrectIds = new Set(prev.correctIds);
+      const newWrongIds = new Set(prev.wrongIds);
       let newQueue = prev.queue;
       let nextIndex = prev.currentIndex + 1;
 
-      if (!correct) {
+      // Track distinct outcome per card: a card's final answer determines its bucket
+      if (correct) {
+        newCorrectIds.add(card.id);
+        newWrongIds.delete(card.id);
+      } else {
         newMissed.add(card.id);
+        newWrongIds.add(card.id);
+        newCorrectIds.delete(card.id);
       }
 
       // When we exhaust the original queue, append missed-but-not-yet-retried cards
@@ -492,8 +499,8 @@ function StudyScreen({
         currentIndex: nextIndex,
         missed: newMissed,
         retried: newRetried,
-        correct: prev.correct + (correct ? 1 : 0),
-        wrong: prev.wrong + (correct ? 0 : 1),
+        correctIds: newCorrectIds,
+        wrongIds: newWrongIds,
         shown: false,
       };
     });
@@ -502,9 +509,13 @@ function StudyScreen({
   // Navigate to results when queue is exhausted
   useEffect(() => {
     if (session.queue.length > 0 && session.currentIndex >= session.queue.length) {
-      onNavigate({ name: 'results', correct: session.correct, wrong: session.wrong });
+      onNavigate({
+        name: 'results',
+        correct: session.correctIds.size,
+        wrong: session.wrongIds.size,
+      });
     }
-  }, [session.currentIndex, session.queue.length, session.correct, session.wrong, onNavigate]);
+  }, [session.currentIndex, session.queue.length, session.correctIds, session.wrongIds, onNavigate]);
 
   if (session.queue.length === 0) {
     return (
@@ -539,7 +550,7 @@ function StudyScreen({
           </button>
         )}
       </section>
-      <p>Correct so far: {session.correct} &nbsp;|&nbsp; Wrong so far: {session.wrong}</p>
+      <p>Correct so far: {session.correctIds.size} &nbsp;|&nbsp; Wrong so far: {session.wrongIds.size}</p>
     </main>
   );
 }
@@ -673,6 +684,7 @@ function ProgressScreen({
 
 // ─── App root ─────────────────────────────────────────────────────────────────
 export function App() {
+  // TODO(phase 4): refresh day on visibility change so engine calls use the correct date after midnight
   const day = useMemo(() => today(), []);
   const [state, setState] = useState<AppState>(() => loadState(day));
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
