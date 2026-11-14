@@ -5,3 +5,5 @@ export * from './session';
 export * from './monsters';
 export * from './streak';
 export * from './storage';
+export * from './decks';
+export * from './rollover';

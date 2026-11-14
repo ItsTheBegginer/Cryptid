@@ -36,6 +36,17 @@ export function bigfootView(cards: Card[], today: Day): MonsterView {
   return { id: 'bigfoot', strength, active: strength > 0 };
 }
 
+/** Checks all 4 monster views; appends any that reached strength 0 to state.defeated. */
+export function updateDefeated(state: AppState, today: Day): AppState {
+  const views = monsterViews(state, today);
+  const alreadyDefeated = new Set<MonsterId>(state.defeated);
+  const newlyDefeated = views
+    .filter((v) => v.strength === 0 && !alreadyDefeated.has(v.id))
+    .map((v) => v.id);
+  if (newlyDefeated.length === 0) return state;
+  return { ...state, defeated: [...state.defeated, ...newlyDefeated] };
+}
+
 /** Everything the presentation layer needs, in one call. */
 export function monsterViews(state: AppState, today: Day): MonsterView[] {
   const boss = state.decks.map((d) => bossView(d, state.cards, today)).filter((v) => v.active);

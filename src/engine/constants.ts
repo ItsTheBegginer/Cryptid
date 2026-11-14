@@ -16,3 +16,5 @@ export const MASTERED_BOX = 4;
 export const NEGLECT_THRESHOLD_DAYS = 7;
 
 export const SAVE_VERSION = 1;
+
+export const MAX_ROLLOVER_DAYS = 30;

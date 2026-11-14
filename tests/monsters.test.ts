@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { INITIAL_MONSTERS, MONSTER_MAX, monsterViews, reduceMonsters, type MonsterEvent } from '../src/engine';
+import {
+  applyDailyRollover,
+  INITIAL_MONSTERS,
+  MONSTER_MAX,
+  monsterViews,
+  reduceMonsters,
+  type MonsterEvent,
+} from '../src/engine';
 import { stateArb } from './helpers';
 
 const eventArb: fc.Arbitrary<MonsterEvent> = fc.oneof(
@@ -37,5 +44,34 @@ describe('monsters', () => {
         expect(v.strength).toBeLessThanOrEqual(MONSTER_MAX);
       }
     }));
+  });
+});
+
+describe('applyDailyRollover', () => {
+  it('skipped days increase wendigo strength (or keep it at MONSTER_MAX)', () => {
+    fc.assert(
+      fc.property(
+        stateArb,
+        // lastStudyDay between 0 and 500
+        fc.integer({ min: 0, max: 500 }),
+        // today is at least lastStudyDay + 2 so there is at least one skipped day
+        fc.integer({ min: 2, max: 100 }),
+        (state, lastStudyDay, gap) => {
+          const today = lastStudyDay + gap;
+          const stateWithStreak = {
+            ...state,
+            streak: { ...state.streak, lastStudyDay },
+          };
+          const before = stateWithStreak.monsters.wendigo;
+          const after = applyDailyRollover(stateWithStreak, today);
+          // Wendigo must be >= before (missed days feed it), unless already maxed
+          if (before < MONSTER_MAX) {
+            expect(after.monsters.wendigo).toBeGreaterThan(before);
+          } else {
+            expect(after.monsters.wendigo).toBe(MONSTER_MAX);
+          }
+        },
+      ),
+    );
   });
 });
