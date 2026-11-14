@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Engine Purity Check",
+  "description": "Keep src/engine free of UI imports, Date.now and Math.random.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["src/engine/**/*.ts"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Check the edited engine file: it must not import from src/ui or src/presentation, and must not use Date.now(), new Date(), or Math.random(). Time and randomness must be injected. Fix any violation."
+  }
+}

@@ -1,0 +1,6 @@
+node_modules
+dist
+.DS_Store
+*.log
+.env
+# NOTE: never add .kiro/ here. Kiroween requires it in the repo.

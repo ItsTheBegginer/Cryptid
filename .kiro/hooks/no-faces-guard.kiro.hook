@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "No-Faces Guard",
+  "description": "When presentation or public assets change, check they contain no faces or eyes.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["src/presentation/**/*", "public/**/*"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Run `npm run check:faces`. Also review the edited file for anything that could read as a face: paired dots, eye-like circles, mouth-like curves. Fix any violation per .kiro/steering/no-faces.md."
+  }
+}
