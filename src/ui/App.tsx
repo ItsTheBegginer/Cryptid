@@ -127,9 +127,10 @@ function HomeScreen({
         {state.decks.length === 0 && <p>No decks yet.</p>}
         {state.decks.map((deck) => {
           const deckCards = state.cards.filter((c) => c.deckId === deck.id);
-          const dueCount = buildQueue(deckCards, day).length;
-          const examLabel = deck.examDay !== null
-            ? `Exam in ${deck.examDay - day} day(s)`
+          const dueCount = buildQueue(deckCards, day, SESSION_QUEUE_LIMIT).length;
+          const daysLeft = deck.examDay !== null ? deck.examDay - day : null;
+          const examLabel = daysLeft !== null
+            ? (daysLeft >= 0 ? `Exam in ${daysLeft} day(s)` : 'Exam passed')
             : 'No exam set';
           return (
             <div key={deck.id} style={{ margin: '8px 0', padding: '8px', border: '1px solid #ccc' }}>
@@ -666,7 +667,10 @@ function ProgressScreen({
           const cards = state.cards.filter((c) => c.deckId === deck.id);
           const deckMastered = cards.filter((c) => c.box >= MASTERED_BOX).length;
           const deckPct = cards.length === 0 ? 0 : Math.round((deckMastered / cards.length) * 100);
-          const examLabel = deck.examDay !== null ? `Exam in ${deck.examDay - day} day(s)` : '';
+          const daysLeft = deck.examDay !== null ? deck.examDay - day : null;
+          const examLabel = daysLeft !== null
+            ? (daysLeft >= 0 ? `Exam in ${daysLeft} day(s)` : 'Exam passed')
+            : '';
           return (
             <div key={deck.id} style={{ margin: '12px 0', padding: '8px', border: '1px solid #ddd' }}>
               <strong>{deck.name}</strong>
