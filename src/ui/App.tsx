@@ -7,6 +7,7 @@ import {
   emptyState,
   exportDeck,
   MASTERED_BOX,
+  MS_PER_DAY,
   monsterViews,
   recordStudy,
   reduceMonsters,
@@ -28,6 +29,8 @@ import { demoDeck } from './demoDeck';
 // ─── constants ────────────────────────────────────────────────────────────────
 const SAVE_KEY = 'cryptid-study-quest';
 const BOXES: Box[] = [1, 2, 3, 4, 5];
+/** Upper bound for the study session queue. Large enough to never silently truncate a deck. */
+const SESSION_QUEUE_LIMIT = 1000;
 
 const MONSTER_NAMES: Record<MonsterId, string> = {
   wendigo: 'Wendigo',
@@ -46,7 +49,7 @@ type Screen =
   | { name: 'progress' };
 
 // ─── persistence helpers ──────────────────────────────────────────────────────
-const today = (): number => Math.floor(Date.now() / 86_400_000);
+const today = (): number => Math.floor(Date.now() / MS_PER_DAY);
 
 function loadState(day: number): AppState {
   const raw = localStorage.getItem(SAVE_KEY);
@@ -211,10 +214,8 @@ function DeckEditorScreen({
   const [addError, setAddError] = useState('');
   const [exportText, setExportText] = useState('');
 
-  const prevDeckId = useRef(deckId);
-  if (prevDeckId.current !== deckId) {
-    // Reset local form state when navigating to a different deck
-    prevDeckId.current = deckId;
+  // Reset form state when navigating to a different deck (safe to run in strict mode)
+  useEffect(() => {
     setDeckName(deck?.name ?? '');
     setExamInput('');
     setExamError('');
@@ -222,7 +223,10 @@ function DeckEditorScreen({
     setAnswer('');
     setAddError('');
     setExportText('');
-  }
+    // deck?.name intentionally excluded: we only want to reset on deckId change,
+    // not on every rename keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deckId]);
 
   if (!deck) {
     return (
@@ -414,7 +418,7 @@ interface SessionState {
 
 function buildInitialSession(cards: Card[], day: number): SessionState {
   return {
-    queue: buildQueue(cards, day),
+    queue: buildQueue(cards, day, SESSION_QUEUE_LIMIT),
     currentIndex: 0,
     missed: new Set(),
     retried: new Set(),

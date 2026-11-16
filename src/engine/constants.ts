@@ -17,4 +17,7 @@ export const NEGLECT_THRESHOLD_DAYS = 7;
 
 export const SAVE_VERSION = 1;
 
+/** Milliseconds in one day — used by the UI to convert Date.now() to a day index. */
+export const MS_PER_DAY = 86_400_000;
+
 export const MAX_ROLLOVER_DAYS = 30;
