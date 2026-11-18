@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   applyDailyRollover,
+  BOX_START,
   buildQueue,
   createDeck,
   deserialize,
@@ -297,7 +298,7 @@ function DeckEditorScreen({
       deckId,
       prompt: p,
       answer: a,
-      box: 1,
+      box: BOX_START,
       dueDay: day,
       reviews: 0,
       lapses: 0,
@@ -440,7 +441,7 @@ function DeckEditorScreen({
                   setImportError('');
                   const result = importDeck(state, importJsonText);
                   if (!result.ok) {
-                    setImportError(result.error);
+                    setImportError('Import failed: invalid or unrecognised deck format. Check that prompt, answer, reviews, lapses, and box are all valid.');
                     return;
                   }
                   onStateChange(result.value);
@@ -507,7 +508,10 @@ function DeckEditorScreen({
                   style={{ width: '200px' }}
                 />
                 <button
-                  onClick={() => setDraftCards(draftCards.filter((_, i) => i !== idx))}
+                  onClick={() => {
+                    setDraftCards(draftCards.filter((_, i) => i !== idx));
+                    setDraftError('');
+                  }}
                 >
                   Remove
                 </button>
@@ -847,13 +851,13 @@ export function App() {
   // Persist on every state change
   useEffect(() => { persist(state); }, [state]);
 
-  function handleStateChange(next: AppState) {
+  const handleStateChange = useCallback((next: AppState) => {
     setState(next);
-  }
+  }, []);
 
-  function handleNavigate(s: Screen) {
+  const handleNavigate = useCallback((s: Screen) => {
     setScreen(s);
-  }
+  }, []);
 
   if (screen.name === 'home') {
     return (
