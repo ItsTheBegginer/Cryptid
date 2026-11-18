@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { parsePlainText } from '../src/engine';
+import { parsePlainText, BOX_START } from '../src/engine';
 
 /** Deterministic id factory — avoids crypto.randomUUID() in tests. */
 function makeCounter(): () => string {
@@ -75,7 +75,7 @@ describe('parsePlainText', () => {
       deckId: 'geo',
       prompt: 'capital of France',
       answer: 'Paris',
-      box: 1,
+      box: BOX_START,
       dueDay: 42,
       reviews: 0,
       lapses: 0,

@@ -142,4 +142,44 @@ describe('decks', () => {
     const result = importDeck(emptyState(), JSON.stringify({ deck: { id: 'x', name: 'y', examDay: null } }));
     expect(result.ok).toBe(false);
   });
+
+  it('importDeck rejects a card with an empty prompt', () => {
+    const payload = JSON.stringify({
+      deck: { id: 'd1', name: 'D', examDay: null },
+      cards: [{ id: 'c1', deckId: 'd1', prompt: '', answer: 'answer', box: 1, dueDay: 0, reviews: 0, lapses: 0, lastReviewedDay: null }],
+    });
+    expect(importDeck(emptyState(), payload).ok).toBe(false);
+  });
+
+  it('importDeck rejects a card with an empty answer', () => {
+    const payload = JSON.stringify({
+      deck: { id: 'd1', name: 'D', examDay: null },
+      cards: [{ id: 'c1', deckId: 'd1', prompt: 'prompt', answer: '', box: 1, dueDay: 0, reviews: 0, lapses: 0, lastReviewedDay: null }],
+    });
+    expect(importDeck(emptyState(), payload).ok).toBe(false);
+  });
+
+  it('importDeck rejects a card with negative reviews', () => {
+    const payload = JSON.stringify({
+      deck: { id: 'd1', name: 'D', examDay: null },
+      cards: [{ id: 'c1', deckId: 'd1', prompt: 'p', answer: 'a', box: 1, dueDay: 0, reviews: -1, lapses: 0, lastReviewedDay: null }],
+    });
+    expect(importDeck(emptyState(), payload).ok).toBe(false);
+  });
+
+  it('importDeck rejects a card with a float lapses value', () => {
+    const payload = JSON.stringify({
+      deck: { id: 'd1', name: 'D', examDay: null },
+      cards: [{ id: 'c1', deckId: 'd1', prompt: 'p', answer: 'a', box: 1, dueDay: 0, reviews: 0, lapses: 1.5, lastReviewedDay: null }],
+    });
+    expect(importDeck(emptyState(), payload).ok).toBe(false);
+  });
+
+  it('importDeck rejects a card with a negative lastReviewedDay', () => {
+    const payload = JSON.stringify({
+      deck: { id: 'd1', name: 'D', examDay: null },
+      cards: [{ id: 'c1', deckId: 'd1', prompt: 'p', answer: 'a', box: 1, dueDay: 0, reviews: 0, lapses: 0, lastReviewedDay: -1 }],
+    });
+    expect(importDeck(emptyState(), payload).ok).toBe(false);
+  });
 });
