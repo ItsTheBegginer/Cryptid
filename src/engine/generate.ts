@@ -14,7 +14,7 @@ export function parsePlainText(
   text: string,
   deckId: string,
   today: Day,
-  makeId: () => string = () => crypto.randomUUID(),
+  makeId: () => string,
 ): Card[] {
   if (text.trim().length === 0) return [];
 

@@ -473,7 +473,7 @@ function DeckEditorScreen({
           style={{ marginTop: '4px' }}
           onClick={() => {
             setDraftError('');
-            const generated = parsePlainText(notesText, deckId, day);
+            const generated = parsePlainText(notesText, deckId, day, () => crypto.randomUUID());
             setDraftCards(generated);
           }}
         >
@@ -518,6 +518,14 @@ function DeckEditorScreen({
               style={{ marginTop: '8px' }}
               onClick={() => {
                 setDraftError('');
+                // Validate all draft cards before persisting any
+                const hasBlank = draftCards.some(
+                  (c) => c.prompt.trim().length === 0 || c.answer.trim().length === 0,
+                );
+                if (hasBlank) {
+                  setDraftError('All cards must have a non-empty prompt and answer.');
+                  return;
+                }
                 // Add each draft card in sequence; stop on first error
                 let current = state;
                 for (const card of draftCards) {
