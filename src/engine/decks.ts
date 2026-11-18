@@ -81,13 +81,21 @@ export function importDeck(state: AppState, json: string): Result<AppState> {
   // A malformed element (missing deckId, box, dueDay, etc.) would silently produce
   // corrupted state that crashes buildQueue and the scheduler.
   for (const element of cards) {
+    if (typeof element !== 'object' || element === null) {
+      return { ok: false, error: 'Invalid card in import: missing required fields' };
+    }
+    const e = element as Record<string, unknown>;
+    const lastReviewed = e['lastReviewedDay'];
     if (
-      typeof element !== 'object' ||
-      element === null ||
-      typeof (element as Record<string, unknown>)['id'] !== 'string' ||
-      typeof (element as Record<string, unknown>)['deckId'] !== 'string' ||
-      typeof (element as Record<string, unknown>)['dueDay'] !== 'number' ||
-      ![1, 2, 3, 4, 5].includes((element as Record<string, unknown>)['box'] as number)
+      typeof e['id'] !== 'string' ||
+      typeof e['deckId'] !== 'string' ||
+      typeof e['dueDay'] !== 'number' ||
+      ![1, 2, 3, 4, 5].includes(e['box'] as number) ||
+      typeof e['prompt'] !== 'string' || (e['prompt'] as string).length === 0 ||
+      typeof e['answer'] !== 'string' || (e['answer'] as string).length === 0 ||
+      typeof e['reviews'] !== 'number' || !Number.isInteger(e['reviews']) || (e['reviews'] as number) < 0 ||
+      typeof e['lapses'] !== 'number' || !Number.isInteger(e['lapses']) || (e['lapses'] as number) < 0 ||
+      !(lastReviewed === null || (typeof lastReviewed === 'number' && Number.isInteger(lastReviewed) && lastReviewed >= 0))
     ) {
       return { ok: false, error: 'Invalid card in import: missing required fields' };
     }

@@ -1,4 +1,6 @@
 export const MAX_BOX = 5;
+/** The starting Leitner box for newly created cards. */
+export const BOX_START = 1;
 /** Days until a card is due again, indexed by Leitner box (1..5). */
 export const BOX_INTERVAL_DAYS: Readonly<Record<number, number>> = { 1: 0, 2: 1, 3: 3, 4: 7, 5: 14 };
 

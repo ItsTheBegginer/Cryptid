@@ -6,9 +6,11 @@ import {
   deserialize,
   emptyState,
   exportDeck,
+  importDeck,
   MASTERED_BOX,
   MS_PER_DAY,
   monsterViews,
+  parsePlainText,
   recordStudy,
   reduceMonsters,
   removeCard,
@@ -215,6 +217,16 @@ function DeckEditorScreen({
   const [addError, setAddError] = useState('');
   const [exportText, setExportText] = useState('');
 
+  // Import JSON state
+  const [showImport, setShowImport] = useState(false);
+  const [importJsonText, setImportJsonText] = useState('');
+  const [importError, setImportError] = useState('');
+
+  // Paste notes (plain text) state
+  const [notesText, setNotesText] = useState('');
+  const [draftCards, setDraftCards] = useState<Card[]>([]);
+  const [draftError, setDraftError] = useState('');
+
   // Reset form state when navigating to a different deck (safe to run in strict mode)
   useEffect(() => {
     setDeckName(deck?.name ?? '');
@@ -224,6 +236,12 @@ function DeckEditorScreen({
     setAnswer('');
     setAddError('');
     setExportText('');
+    setShowImport(false);
+    setImportJsonText('');
+    setImportError('');
+    setNotesText('');
+    setDraftCards([]);
+    setDraftError('');
     // deck?.name intentionally excluded: we only want to reset on deckId change,
     // not on every rename keystroke.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -399,6 +417,127 @@ function DeckEditorScreen({
               style={{ width: '100%', fontFamily: 'monospace', fontSize: '12px' }}
               value={exportText}
             />
+          </div>
+        )}
+      </section>
+
+      <section style={{ marginTop: '16px' }}>
+        <button onClick={() => { setShowImport((v) => !v); setImportError(''); }}>
+          Import JSON
+        </button>
+        {showImport && (
+          <div style={{ marginTop: '8px' }}>
+            <textarea
+              rows={6}
+              style={{ width: '100%', fontFamily: 'monospace', fontSize: '12px' }}
+              placeholder="Paste exported deck JSON here"
+              value={importJsonText}
+              onChange={(e) => setImportJsonText(e.target.value)}
+            />
+            <div style={{ marginTop: '4px' }}>
+              <button
+                onClick={() => {
+                  setImportError('');
+                  const result = importDeck(state, importJsonText);
+                  if (!result.ok) {
+                    setImportError(result.error);
+                    return;
+                  }
+                  onStateChange(result.value);
+                  setImportJsonText('');
+                  setShowImport(false);
+                }}
+              >
+                Import
+              </button>
+              {importError && (
+                <span style={{ color: 'red', marginLeft: '8px' }}>{importError}</span>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
+
+      <section style={{ marginTop: '16px' }}>
+        <div>
+          <label htmlFor="paste-notes">Paste notes (term: definition, one per line)</label>
+        </div>
+        <textarea
+          id="paste-notes"
+          rows={6}
+          style={{ width: '100%', marginTop: '4px', fontFamily: 'monospace', fontSize: '12px' }}
+          value={notesText}
+          onChange={(e) => setNotesText(e.target.value)}
+        />
+        <button
+          style={{ marginTop: '4px' }}
+          onClick={() => {
+            setDraftError('');
+            const generated = parsePlainText(notesText, deckId, day);
+            setDraftCards(generated);
+          }}
+        >
+          Generate cards
+        </button>
+
+        {draftCards.length > 0 && (
+          <div style={{ marginTop: '8px' }}>
+            {draftCards.map((card, idx) => (
+              <div key={card.id} style={{ display: 'flex', gap: '8px', margin: '4px 0', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  value={card.prompt}
+                  onChange={(e) => {
+                    const updated = draftCards.map((c, i) =>
+                      i === idx ? { ...c, prompt: e.target.value } : c,
+                    );
+                    setDraftCards(updated);
+                  }}
+                  style={{ width: '200px' }}
+                />
+                <input
+                  type="text"
+                  value={card.answer}
+                  onChange={(e) => {
+                    const updated = draftCards.map((c, i) =>
+                      i === idx ? { ...c, answer: e.target.value } : c,
+                    );
+                    setDraftCards(updated);
+                  }}
+                  style={{ width: '200px' }}
+                />
+                <button
+                  onClick={() => setDraftCards(draftCards.filter((_, i) => i !== idx))}
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+
+            <button
+              style={{ marginTop: '8px' }}
+              onClick={() => {
+                setDraftError('');
+                // Add each draft card in sequence; stop on first error
+                let current = state;
+                for (const card of draftCards) {
+                  const result = addCard(current, card);
+                  if (!result.ok) {
+                    setDraftError(result.error);
+                    return;
+                  }
+                  current = result.value;
+                }
+                onStateChange(current);
+                setDraftCards([]);
+                setNotesText('');
+              }}
+            >
+              Save all
+            </button>
+            {draftError && (
+              <span style={{ color: 'red', marginLeft: '8px' }}>{draftError}</span>
+            )}
           </div>
         )}
       </section>
