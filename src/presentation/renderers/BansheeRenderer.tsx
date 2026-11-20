@@ -59,9 +59,6 @@ export function BansheeRenderer({ strength, ripple, defeated }: BansheeRendererP
     height: '200px',
     pointerEvents: 'none',
     zIndex: 2,
-    opacity: defeated ? 0 : 1,
-    filter: defeated ? 'blur(8px)' : 'none',
-    transition: defeated ? 'opacity 600ms ease-in-out, filter 600ms ease-in-out' : 'none',
   };
 
   return (
@@ -70,7 +67,10 @@ export function BansheeRenderer({ strength, ripple, defeated }: BansheeRendererP
       viewBox="0 0 1440 200"
       preserveAspectRatio="xMidYMid slice"
       aria-hidden="true"
-      className={ripple ? 'banshee-ripple' : undefined}
+      className={[
+        ripple ? 'banshee-ripple' : '',
+        defeated ? 'defeated-dissolve' : '',
+      ].filter(Boolean).join(' ') || undefined}
       style={svgStyle}
     >
       <path

@@ -47,9 +47,6 @@ export function WendigoRenderer({ strength, defeated }: WendigoRendererProps) {
     height: '100vh',
     pointerEvents: 'none',
     zIndex: 2,
-    opacity: defeated ? 0 : 1,
-    filter: defeated ? 'blur(8px)' : 'none',
-    transition: defeated ? 'opacity 600ms ease-in-out, filter 600ms ease-in-out' : 'none',
   };
 
   return (
@@ -59,6 +56,9 @@ export function WendigoRenderer({ strength, defeated }: WendigoRendererProps) {
       preserveAspectRatio="xMidYMid slice"
       aria-hidden="true"
       style={svgStyle}
+      // CSS class controls the dissolve transition — gated inside
+      // @media (prefers-reduced-motion: no-preference) in global.css
+      className={defeated ? 'defeated-dissolve' : undefined}
     >
       <defs>
         <filter id="wendigo-glow" x="-20%" y="-20%" width="140%" height="140%">
@@ -80,9 +80,8 @@ export function WendigoRenderer({ strength, defeated }: WendigoRendererProps) {
               strokeDasharray={branch.length}
               strokeDashoffset={offset}
               strokeLinecap="round"
-              style={{
-                transition: 'stroke-dashoffset 1.2s ease-in-out',
-              } as React.CSSProperties}
+              // CSS class gates this transition behind prefers-reduced-motion
+              className="branch-animated"
             />
           );
         })}
@@ -102,9 +101,8 @@ export function WendigoRenderer({ strength, defeated }: WendigoRendererProps) {
               strokeDasharray={branch.length}
               strokeDashoffset={offset}
               strokeLinecap="round"
-              style={{
-                transition: 'stroke-dashoffset 1.2s ease-in-out',
-              } as React.CSSProperties}
+              // CSS class gates this transition behind prefers-reduced-motion
+              className="branch-animated"
             />
           );
         })}

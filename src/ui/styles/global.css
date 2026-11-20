@@ -378,6 +378,42 @@ progress.monster-bar::-moz-progress-bar {
   }
 }
 
+/* ─── Monster defeated dissolve ──────────────────────────────────────────── */
+/* Instant hide by default; transition only when motion is acceptable */
+.defeated-dissolve {
+  opacity: 0;
+  filter: blur(8px);
+}
+
+.defeated-dissolve-heavy {
+  opacity: 0;
+  filter: blur(12px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .defeated-dissolve {
+    transition: opacity 600ms ease-in-out, filter 600ms ease-in-out;
+  }
+
+  .defeated-dissolve-heavy {
+    transition: opacity 600ms ease-in-out, filter 600ms ease-in-out;
+  }
+}
+
+/* ─── Wendigo branch growth ───────────────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .branch-animated {
+    transition: stroke-dashoffset 1.2s ease-in-out;
+  }
+}
+
+/* ─── Bigfoot footprint appearance ───────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .footprint-animated {
+    transition: opacity 0.4s ease-in-out;
+  }
+}
+
 /* ─── Jersey Devil pulse ──────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: no-preference) {
   @keyframes jd-pulse {

@@ -19,7 +19,9 @@ export function JerseyDevilRenderer({ strength, defeated, active }: JerseyDevilR
   const cloudOpacity = 0.4 + (strength / 100) * 0.6;
   const glowOpacity = (strength / 100) * 0.5;
 
-  // CSS variable for the pulse animation base opacity
+  // Inline style holds only layout and the CSS custom property for the pulse keyframe.
+  // Defeat dissolve and the opacity transition are handled via CSS classes to ensure
+  // they are properly gated behind @media (prefers-reduced-motion: no-preference).
   const svgStyle: React.CSSProperties = {
     position: 'fixed',
     top: 0,
@@ -28,14 +30,16 @@ export function JerseyDevilRenderer({ strength, defeated, active }: JerseyDevilR
     height: '300px',
     pointerEvents: 'none',
     zIndex: 2,
-    opacity: defeated ? 0 : cloudOpacity,
-    filter: defeated ? 'blur(12px)' : 'none',
-    transition: defeated
-      ? 'opacity 600ms ease-in-out, filter 600ms ease-in-out'
-      : 'opacity 0.4s ease-in-out',
-    // Used by the CSS keyframe for pulse; maps to a CSS custom property at element level
+    // opacity is set here only when not defeated, so the CSS class can take over on defeat.
+    // The jd-pulse CSS animation will override this during the pulse cycle.
+    opacity: defeated ? undefined : cloudOpacity,
     ['--jd-opacity-base' as string]: cloudOpacity,
   };
+
+  const classes = [
+    active && !defeated ? 'jd-pulse-anim' : '',
+    defeated ? 'defeated-dissolve-heavy' : '',
+  ].filter(Boolean).join(' ') || undefined;
 
   return (
     <svg
@@ -43,7 +47,7 @@ export function JerseyDevilRenderer({ strength, defeated, active }: JerseyDevilR
       viewBox="0 0 400 300"
       aria-hidden="true"
       style={svgStyle}
-      className={active && !defeated ? 'jd-pulse-anim' : undefined}
+      className={classes}
     >
       <defs>
         {/* Internal frost-blue glow — blurred radial gradient */}

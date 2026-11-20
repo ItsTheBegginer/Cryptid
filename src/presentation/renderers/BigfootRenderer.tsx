@@ -77,8 +77,6 @@ export function BigfootRenderer({ strength, defeated }: BigfootRendererProps) {
     height: '180px',
     pointerEvents: 'none',
     zIndex: 2,
-    opacity: defeated ? 0 : 1,
-    transition: defeated ? 'opacity 600ms ease-in-out' : 'none',
   };
 
   return (
@@ -88,6 +86,9 @@ export function BigfootRenderer({ strength, defeated }: BigfootRendererProps) {
       preserveAspectRatio="xMidYMid slice"
       aria-hidden="true"
       style={svgStyle}
+      // CSS class controls the dissolve transition — gated inside
+      // @media (prefers-reduced-motion: no-preference) in global.css
+      className={defeated ? 'defeated-dissolve' : undefined}
     >
       {/* Footprints — simple elongated ovals, no anatomy */}
       {PRINTS.map((print, i) => {
@@ -102,7 +103,8 @@ export function BigfootRenderer({ strength, defeated }: BigfootRendererProps) {
             fill="#111827"
             opacity={visible ? 0.6 : 0}
             transform={`rotate(${print.rotation}, ${print.cx}, ${print.cy})`}
-            style={{ transition: 'opacity 0.4s ease-in-out' }}
+            // CSS class gates this transition behind prefers-reduced-motion
+            className="footprint-animated"
           />
         );
       })}
