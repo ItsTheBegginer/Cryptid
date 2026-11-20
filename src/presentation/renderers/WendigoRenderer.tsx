@@ -13,27 +13,28 @@ interface WendigoRendererProps {
 
 // Each path has a hardcoded approximate length used for dash calculations.
 // These are rough lengths computed from the segment geometry.
+// All endpoint y-values are ≤ 300 (top-third of the 900-unit-high viewBox).
 
 // Left-side branch paths (from top-left corner, spreading inward/downward)
 const LEFT_BRANCHES = [
-  { d: 'M0,0 L120,180 L200,310 L260,420', length: 460 },
-  { d: 'M0,0 L80,120 L130,190 L90,280 L60,360', length: 400 },
-  { d: 'M0,0 L120,180 L150,260 L180,210 L220,290', length: 390 },
-  { d: 'M0,0 L80,120 L110,180 L80,250', length: 310 },
-  { d: 'M120,180 L170,250 L140,310 L160,370', length: 240 },
-  { d: 'M200,310 L240,350 L220,400', length: 110 },
-  { d: 'M80,120 L50,170 L70,220', length: 130 },
+  { d: 'M0,0 L120,150 L200,240 L260,300', length: 410 },
+  { d: 'M0,0 L80,110 L130,170 L90,240 L60,290', length: 360 },
+  { d: 'M0,0 L120,150 L150,220 L180,180 L220,260', length: 360 },
+  { d: 'M0,0 L80,110 L110,160 L80,220', length: 280 },
+  { d: 'M120,150 L170,210 L140,265 L160,295', length: 180 },
+  { d: 'M200,240 L240,275 L220,295', length: 80 },
+  { d: 'M80,110 L50,155 L70,200', length: 120 },
 ];
 
 // Right-side branch paths (from top-right corner, spreading inward/downward)
 const RIGHT_BRANCHES = [
-  { d: 'M1440,0 L1320,180 L1240,310 L1180,420', length: 460 },
-  { d: 'M1440,0 L1360,120 L1310,190 L1350,280 L1380,360', length: 400 },
-  { d: 'M1440,0 L1320,180 L1290,260 L1260,210 L1220,290', length: 390 },
-  { d: 'M1440,0 L1360,120 L1330,180 L1360,250', length: 310 },
-  { d: 'M1320,180 L1270,250 L1300,310 L1280,370', length: 240 },
-  { d: 'M1240,310 L1200,350 L1220,400', length: 110 },
-  { d: 'M1360,120 L1390,170 L1370,220', length: 130 },
+  { d: 'M1440,0 L1320,150 L1240,240 L1180,300', length: 410 },
+  { d: 'M1440,0 L1360,110 L1310,170 L1350,240 L1380,290', length: 360 },
+  { d: 'M1440,0 L1320,150 L1290,220 L1260,180 L1220,260', length: 360 },
+  { d: 'M1440,0 L1360,110 L1330,160 L1360,220', length: 280 },
+  { d: 'M1320,150 L1270,210 L1300,265 L1280,295', length: 180 },
+  { d: 'M1240,240 L1200,275 L1220,295', length: 80 },
+  { d: 'M1360,110 L1390,155 L1370,200', length: 120 },
 ];
 
 export function WendigoRenderer({ strength, defeated }: WendigoRendererProps) {
