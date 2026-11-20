@@ -1,0 +1,460 @@
+/* ─── Colour palette ──────────────────────────────────────────────────────── */
+:root {
+  --color-bg-deep: #0a0d14;
+  --color-bg-mid: #111827;
+  --color-bg-raised: #1c2333;
+  --color-fog: #1e2d3d;
+  --color-moon-white: #e8eaf0;
+  --color-bone: #c9cdd8;
+  --color-mist: #6b7a99;
+  --color-blood-red: #c0392b;
+  --color-ember: #e67e22;
+  --color-sage: #2ecc71;
+  --color-frost-blue: #5dade2;
+}
+
+/* ─── Spacing scale ───────────────────────────────────────────────────────── */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 40px;
+  --space-8: 48px;
+  --space-9: 64px;
+  --space-10: 80px;
+}
+
+/* ─── Base reset ──────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background-color: var(--color-bg-deep);
+  color: var(--color-moon-white);
+  min-height: 100vh;
+}
+
+/* ─── Typography ──────────────────────────────────────────────────────────── */
+body,
+input,
+button,
+textarea,
+select {
+  font-family: system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--color-moon-white);
+}
+
+h1,
+h2,
+h3 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  color: var(--color-moon-white);
+  line-height: 1.2;
+}
+
+h1 { font-size: 40px; margin-bottom: var(--space-4); }
+h2 { font-size: 28px; margin-bottom: var(--space-3); }
+h3 { font-size: 20px; margin-bottom: var(--space-2); }
+
+p { color: var(--color-bone); margin-bottom: var(--space-2); }
+
+/* ─── Focus ring ──────────────────────────────────────────────────────────── */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-frost-blue);
+  outline-offset: 2px;
+}
+
+/* Remove default outline so we control it via focus-visible only */
+button,
+input,
+textarea,
+select,
+a,
+[tabindex] {
+  outline: none;
+}
+
+/* ─── Button base ─────────────────────────────────────────────────────────── */
+button {
+  display: inline-block;
+  padding: var(--space-2) var(--space-4);
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--color-moon-white);
+  background: var(--color-bg-raised);
+  transition: opacity 0.15s ease-in-out;
+}
+
+button:hover {
+  opacity: 0.85;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--color-frost-blue);
+  color: var(--color-moon-white);
+}
+
+.btn-danger {
+  background: var(--color-blood-red);
+  color: var(--color-moon-white);
+}
+
+/* ─── Input styles ────────────────────────────────────────────────────────── */
+input[type='text'],
+input[type='number'],
+textarea {
+  background: var(--color-bg-raised);
+  color: var(--color-moon-white);
+  border: 1px solid var(--color-mist);
+  border-radius: 4px;
+  padding: var(--space-2) var(--space-3);
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+}
+
+input[type='text']:focus,
+input[type='number']:focus,
+textarea:focus {
+  border-color: var(--color-bone);
+  outline: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-mist);
+}
+
+/* ─── Progress bar base ───────────────────────────────────────────────────── */
+progress {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--color-bg-mid);
+  height: 8px;
+  border-radius: 4px;
+  border: none;
+  display: block;
+}
+
+/* WebKit fill */
+progress::-webkit-progress-bar {
+  background: var(--color-bg-mid);
+  border-radius: 4px;
+}
+
+progress::-webkit-progress-value {
+  background: linear-gradient(to right, var(--color-frost-blue), var(--color-ember), var(--color-blood-red));
+  border-radius: 4px;
+}
+
+/* Firefox fill */
+progress::-moz-progress-bar {
+  background: linear-gradient(to right, var(--color-frost-blue), var(--color-ember), var(--color-blood-red));
+  border-radius: 4px;
+}
+
+/* ─── Monster strength bar ────────────────────────────────────────────────── */
+progress.monster-bar {
+  width: 100%;
+  height: 10px;
+  border-radius: 5px;
+}
+
+progress.monster-bar::-webkit-progress-bar {
+  background: var(--color-bg-mid);
+  border-radius: 5px;
+}
+
+progress.monster-bar::-webkit-progress-value {
+  background: linear-gradient(to right, var(--color-frost-blue), var(--color-ember), var(--color-blood-red));
+  border-radius: 5px;
+}
+
+progress.monster-bar::-moz-progress-bar {
+  background: linear-gradient(to right, var(--color-frost-blue), var(--color-ember), var(--color-blood-red));
+  border-radius: 5px;
+}
+
+/* ─── Study card ──────────────────────────────────────────────────────────── */
+.study-card {
+  background: var(--color-bg-raised);
+  border-radius: 8px;
+  border: 1px solid #2a3550;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  padding: var(--space-5) var(--space-6);
+  margin: var(--space-4) 0;
+}
+
+.card-prompt {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.4rem;
+  color: var(--color-moon-white);
+  margin-bottom: var(--space-3);
+}
+
+.card-answer {
+  font-family: system-ui, sans-serif;
+  font-size: 1.1rem;
+  color: var(--color-bone);
+  margin-bottom: var(--space-3);
+}
+
+/* ─── Card feedback animations ────────────────────────────────────────────── */
+.card-exit-correct {
+  transform: translateX(-60px);
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card-exit-correct {
+    transition: transform 300ms ease-in, opacity 300ms ease-in;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes card-shake {
+    0%   { transform: translateX(0); }
+    20%  { transform: translateX(-8px); }
+    40%  { transform: translateX(8px); }
+    60%  { transform: translateX(-6px); }
+    80%  { transform: translateX(6px); }
+    100% { transform: translateX(0); }
+  }
+
+  .card-shake {
+    animation: card-shake 200ms ease-in-out;
+  }
+}
+
+/* ─── Deck card ───────────────────────────────────────────────────────────── */
+.deck-card {
+  background: var(--color-bg-mid);
+  border-radius: 8px;
+  padding: var(--space-3) var(--space-4);
+  margin: var(--space-2) 0;
+  border: 1px solid #2a3550;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Bestiary entry ──────────────────────────────────────────────────────── */
+.bestiary-entry {
+  background: var(--color-bg-mid);
+  border-radius: 6px;
+  padding: var(--space-3) var(--space-4);
+  margin: var(--space-2) 0;
+  border: 1px solid #2a3550;
+}
+
+.badge-defeated {
+  display: inline-block;
+  background: rgba(46, 204, 113, 0.2);
+  color: var(--color-sage);
+  border: 1px solid var(--color-sage);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  margin-left: var(--space-2);
+}
+
+/* ─── Progress box chart ──────────────────────────────────────────────────── */
+.box-chart {
+  display: flex;
+  gap: 2px;
+  margin: var(--space-2) 0;
+  align-items: flex-end;
+  height: 24px;
+}
+
+.box-bar {
+  height: 6px;
+  background: var(--color-frost-blue);
+  min-width: 2px;
+  border-radius: 2px;
+}
+
+.box-bar-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.box-bar-label span {
+  font-size: 11px;
+  color: var(--color-mist);
+}
+
+/* ─── Streak value ────────────────────────────────────────────────────────── */
+.streak-value {
+  color: var(--color-frost-blue);
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes streak-pulse {
+    0%   { box-shadow: 0 0 0 0 var(--color-frost-blue); }
+    50%  { box-shadow: 0 0 0 6px var(--color-frost-blue); }
+    100% { box-shadow: 0 0 0 0 var(--color-frost-blue); }
+  }
+
+  .streak-pulse {
+    animation: streak-pulse 400ms ease-in-out;
+    border-radius: 4px;
+  }
+}
+
+/* ─── Fog drift ───────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes fog-drift {
+    0%   { transform: translateX(0); }
+    50%  { transform: translateX(30px); }
+    100% { transform: translateX(-30px); }
+  }
+
+  .fog-drift {
+    animation: fog-drift 12s ease-in-out alternate infinite;
+  }
+}
+
+/* ─── Grass sway ──────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes grass-sway-0 {
+    0%, 100% { transform: rotate(-3deg); }
+    50%      { transform: rotate(3deg); }
+  }
+  @keyframes grass-sway-1 {
+    0%, 100% { transform: rotate(-4deg); }
+    50%      { transform: rotate(2deg); }
+  }
+  @keyframes grass-sway-2 {
+    0%, 100% { transform: rotate(-2deg); }
+    50%      { transform: rotate(4deg); }
+  }
+  @keyframes grass-sway-3 {
+    0%, 100% { transform: rotate(-3.5deg); }
+    50%      { transform: rotate(2.5deg); }
+  }
+
+  .grass-sway-0 { animation: grass-sway-0 2.5s ease-in-out infinite; transform-origin: bottom center; }
+  .grass-sway-1 { animation: grass-sway-1 2.9s ease-in-out infinite; transform-origin: bottom center; }
+  .grass-sway-2 { animation: grass-sway-2 3.2s ease-in-out infinite; transform-origin: bottom center; }
+  .grass-sway-3 { animation: grass-sway-3 3.5s ease-in-out infinite; transform-origin: bottom center; }
+}
+
+/* ─── Banshee ripple ──────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes banshee-ripple {
+    0%   { transform: scaleY(1); }
+    50%  { transform: scaleY(1.03); }
+    100% { transform: scaleY(1); }
+  }
+
+  .banshee-ripple {
+    animation: banshee-ripple 200ms ease-in-out;
+  }
+}
+
+/* ─── Jersey Devil pulse ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes jd-pulse {
+    0%, 100% { opacity: var(--jd-opacity-base, 0.5); }
+    50%      { opacity: calc(var(--jd-opacity-base, 0.5) + 0.1); }
+  }
+
+  .jd-pulse-anim {
+    animation: jd-pulse 3s ease-in-out infinite;
+  }
+}
+
+/* ─── App layout ──────────────────────────────────────────────────────────── */
+.app-root {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+}
+
+.screen-content {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+}
+
+/* ─── Monster panel ───────────────────────────────────────────────────────── */
+.monster-panel {
+  margin: var(--space-4) 0;
+}
+
+.monster-entry {
+  margin: var(--space-3) 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-mid);
+  border-radius: 6px;
+  border: 1px solid #2a3550;
+  opacity: 1;
+}
+
+.monster-entry.dormant {
+  opacity: 0.5;
+}
+
+.monster-entry-name {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 14px;
+  color: var(--color-ember);
+  margin-bottom: var(--space-1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.monster-entry-name.dormant-label {
+  color: var(--color-mist);
+}
+
+/* ─── Misc layout helpers ─────────────────────────────────────────────────── */
+section {
+  margin: var(--space-4) 0;
+}
+
+.error-text {
+  color: var(--color-blood-red);
+  font-size: 14px;
+}
+
+.muted {
+  color: var(--color-mist);
+}
+
+.progress-deck-entry {
+  margin: var(--space-3) 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-mid);
+  border-radius: 6px;
+  border: 1px solid #2a3550;
+}

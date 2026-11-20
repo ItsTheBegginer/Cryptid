@@ -27,6 +27,13 @@ import {
   type MonsterId,
 } from '../engine';
 import { placeholderRenderer } from '../presentation/PlaceholderRenderer';
+import {
+  WendigoRenderer,
+  BansheeRenderer,
+  JerseyDevilRenderer,
+  BigfootRenderer,
+} from '../presentation/renderers';
+import { Scene } from './components/Scene';
 import { demoDeck } from './demoDeck';
 
 // ─── constants ────────────────────────────────────────────────────────────────
@@ -71,13 +78,73 @@ function persist(s: AppState): void {
 }
 
 // ─── MonsterPanel ─────────────────────────────────────────────────────────────
-function MonsterPanel({ state, day }: { state: AppState; day: number }) {
+function MonsterPanel({
+  state,
+  day,
+  bansheeRipple,
+}: {
+  state: AppState;
+  day: number;
+  bansheeRipple: boolean;
+}) {
   const views = monsterViews(state, day);
+
+  const wendigo = views.find((v) => v.id === 'wendigo') ?? { id: 'wendigo' as MonsterId, strength: 0, active: false };
+  const banshee = views.find((v) => v.id === 'banshee') ?? { id: 'banshee' as MonsterId, strength: 0, active: false };
+  const jerseyDevil = views.find((v) => v.id === 'jerseyDevil') ?? { id: 'jerseyDevil' as MonsterId, strength: 0, active: false };
+  const bigfoot = views.find((v) => v.id === 'bigfoot') ?? { id: 'bigfoot' as MonsterId, strength: 0, active: false };
+
   return (
-    <section>
-      <h3>Monsters</h3>
-      {views.map((v) => <div key={v.id}>{placeholderRenderer(v)}</div>)}
-    </section>
+    <>
+      {/* Atmospheric monster renderers — fixed-position overlays */}
+      <WendigoRenderer
+        strength={wendigo.strength}
+        defeated={state.defeated.includes('wendigo')}
+      />
+      <BansheeRenderer
+        strength={banshee.strength}
+        ripple={bansheeRipple}
+        defeated={state.defeated.includes('banshee')}
+      />
+      <JerseyDevilRenderer
+        strength={jerseyDevil.strength}
+        active={jerseyDevil.active}
+        defeated={state.defeated.includes('jerseyDevil')}
+      />
+      <BigfootRenderer
+        strength={bigfoot.strength}
+        defeated={state.defeated.includes('bigfoot')}
+      />
+
+      {/* Info panel — compact list of active threats */}
+      <section className="monster-panel">
+        <h3>Monsters</h3>
+        {views.map((v) => {
+          const isDefeated = state.defeated.includes(v.id);
+          if (isDefeated) return null;
+          return (
+            <div
+              key={v.id}
+              className={`monster-entry${v.active ? '' : ' dormant'}`}
+            >
+              <div className={`monster-entry-name${v.active ? '' : ' dormant-label'}`}>
+                <span>{MONSTER_NAMES[v.id]}</span>
+                <span>{v.active ? `${v.strength}/100` : 'dormant'}</span>
+              </div>
+              {v.active && (
+                <progress
+                  className="monster-bar"
+                  max={100}
+                  value={v.strength}
+                />
+              )}
+            </div>
+          );
+        })}
+        {/* Keep placeholder renderer import alive (unused at runtime but referenced) */}
+        {false && placeholderRenderer(views[0]!)}
+      </section>
+    </>
   );
 }
 
@@ -93,6 +160,19 @@ function HomeScreen({
   const [showNewDeck, setShowNewDeck] = useState(false);
   const [newDeckName, setNewDeckName] = useState('');
   const [resetStep, setResetStep] = useState<'idle' | 'confirm'>('idle');
+
+  // Streak pulse: apply class when streak increases
+  const prevStreak = useRef(state.streak.current);
+  const [streakPulse, setStreakPulse] = useState(false);
+
+  useEffect(() => {
+    if (state.streak.current > prevStreak.current) {
+      setStreakPulse(true);
+      const t = setTimeout(() => setStreakPulse(false), 500);
+      return () => clearTimeout(t);
+    }
+    prevStreak.current = state.streak.current;
+  }, [state.streak.current]);
 
   function handleCreateDeck(e: React.FormEvent) {
     e.preventDefault();
@@ -119,11 +199,18 @@ function HomeScreen({
   }
 
   return (
-    <main>
+    <main className="screen-content">
       <h1>Cryptid Study Quest</h1>
-      <p>Streak: {state.streak.current} day(s) &nbsp;|&nbsp; Best: {state.streak.best}</p>
+      <p>
+        Streak:{' '}
+        <span className={`streak-value${streakPulse ? ' streak-pulse' : ''}`}>
+          {state.streak.current}
+        </span>
+        {' day(s)'}&nbsp;|&nbsp;Best:{' '}
+        <span className="streak-value">{state.streak.best}</span>
+      </p>
 
-      <MonsterPanel state={state} day={day} />
+      <MonsterPanel state={state} day={day} bansheeRipple={false} />
 
       <section>
         <h2>Decks</h2>
@@ -136,12 +223,15 @@ function HomeScreen({
             ? (daysLeft >= 0 ? `Exam in ${daysLeft} day(s)` : 'Exam passed')
             : 'No exam set';
           return (
-            <div key={deck.id} style={{ margin: '8px 0', padding: '8px', border: '1px solid #ccc' }}>
+            <div key={deck.id} className="deck-card">
               <strong>{deck.name}</strong>
               {' — '}
               {deckCards.length} card(s), {dueCount} due, {examLabel}
               {' '}
-              <button onClick={() => onNavigate({ name: 'study', deckId: deck.id })}>
+              <button
+                className="btn-primary"
+                onClick={() => onNavigate({ name: 'study', deckId: deck.id })}
+              >
                 Study
               </button>
               {' '}
@@ -153,7 +243,7 @@ function HomeScreen({
         })}
 
         {showNewDeck ? (
-          <form onSubmit={handleCreateDeck} style={{ marginTop: '8px' }}>
+          <form onSubmit={handleCreateDeck} style={{ marginTop: 'var(--space-2)' }}>
             <input
               type="text"
               placeholder="Deck name"
@@ -162,35 +252,38 @@ function HomeScreen({
               autoFocus
             />
             {' '}
-            <button type="submit">Create</button>
+            <button type="submit" className="btn-primary">Create</button>
             {' '}
             <button type="button" onClick={() => { setShowNewDeck(false); setNewDeckName(''); }}>
               Cancel
             </button>
           </form>
         ) : (
-          <button onClick={() => setShowNewDeck(true)} style={{ marginTop: '8px' }}>
+          <button
+            onClick={() => setShowNewDeck(true)}
+            style={{ marginTop: 'var(--space-2)' }}
+          >
             New deck
           </button>
         )}
       </section>
 
-      <section style={{ marginTop: '16px' }}>
+      <section>
         <button onClick={() => onNavigate({ name: 'bestiary' })}>Bestiary</button>
         {' '}
         <button onClick={() => onNavigate({ name: 'progress' })}>Progress</button>
       </section>
 
-      <section style={{ marginTop: '24px' }}>
+      <section>
         {resetStep === 'confirm' ? (
           <>
-            <span>All data will be wiped. </span>
-            <button onClick={handleReset}>Yes, reset</button>
+            <span className="muted">All data will be wiped. </span>
+            <button className="btn-danger" onClick={handleReset}>Yes, reset</button>
             {' '}
             <button onClick={() => setResetStep('idle')}>Cancel</button>
           </>
         ) : (
-          <button onClick={handleReset}>Reset all data</button>
+          <button className="btn-danger" onClick={handleReset}>Reset all data</button>
         )}
       </section>
     </main>
@@ -250,7 +343,7 @@ function DeckEditorScreen({
 
   if (!deck) {
     return (
-      <main>
+      <main className="screen-content">
         <p>Deck not found.</p>
         <button onClick={() => onNavigate({ name: 'home' })}>Back</button>
       </main>
@@ -342,7 +435,7 @@ function DeckEditorScreen({
   const examDaysLeft = deck.examDay !== null ? deck.examDay - day : null;
 
   return (
-    <main>
+    <main className="screen-content">
       <button onClick={() => onNavigate({ name: 'home' })}>Back</button>
       <h2>
         <input
@@ -351,14 +444,14 @@ function DeckEditorScreen({
           onChange={(e) => setDeckName(e.target.value)}
           onBlur={saveDeckName}
           onKeyDown={(e) => { if (e.key === 'Enter') saveDeckName(); }}
-          style={{ fontSize: 'inherit', fontWeight: 'inherit', border: 'none', borderBottom: '1px solid #999' }}
+          style={{ fontSize: 'inherit', fontWeight: 'inherit', border: 'none', borderBottom: '1px solid var(--color-mist)', background: 'transparent' }}
         />
       </h2>
 
       <section>
         <strong>Exam: </strong>
         {examDaysLeft !== null ? `${examDaysLeft} day(s) from today` : 'Not set'}
-        <form onSubmit={handleSetExam} style={{ display: 'inline', marginLeft: '8px' }}>
+        <form onSubmit={handleSetExam} style={{ display: 'inline', marginLeft: 'var(--space-2)' }}>
           <input
             type="number"
             min={0}
@@ -369,49 +462,49 @@ function DeckEditorScreen({
           />
           {' '}
           <button type="submit">Set exam</button>
-          {examError && <span style={{ color: 'red', marginLeft: '8px' }}>{examError}</span>}
+          {examError && <span className="error-text" style={{ marginLeft: 'var(--space-2)' }}>{examError}</span>}
         </form>
       </section>
 
-      <section style={{ marginTop: '16px' }}>
+      <section>
         <h3>Cards ({deckCards.length})</h3>
         {deckCards.length === 0 && <p>No cards yet.</p>}
         {deckCards.map((card) => (
-          <div key={card.id} style={{ margin: '4px 0', padding: '4px', border: '1px solid #ddd' }}>
-            <strong>{card.prompt}</strong> — {card.answer}
-            {' '}
-            <small>(box {card.box})</small>
-            {' '}
+          <div key={card.id} className="deck-card" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <strong>{card.prompt}</strong>
+            <span className="muted">—</span>
+            <span>{card.answer}</span>
+            <small className="muted">(box {card.box})</small>
             <button onClick={() => handleRemoveCard(card.id)}>Remove</button>
           </div>
         ))}
 
-        <form onSubmit={handleAddCard} style={{ marginTop: '8px' }}>
-          <div>
+        <form onSubmit={handleAddCard} style={{ marginTop: 'var(--space-2)' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
             <input
               type="text"
               placeholder="Prompt"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              style={{ marginRight: '8px', width: '200px' }}
+              style={{ width: '200px' }}
             />
             <input
               type="text"
               placeholder="Answer"
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
-              style={{ marginRight: '8px', width: '200px' }}
+              style={{ width: '200px' }}
             />
-            <button type="submit">Add card</button>
+            <button type="submit" className="btn-primary">Add card</button>
           </div>
-          {addError && <p style={{ color: 'red' }}>{addError}</p>}
+          {addError && <p className="error-text">{addError}</p>}
         </form>
       </section>
 
-      <section style={{ marginTop: '16px' }}>
+      <section>
         <button onClick={handleExport}>Export deck</button>
         {exportText && (
-          <div style={{ marginTop: '8px' }}>
+          <div style={{ marginTop: 'var(--space-2)' }}>
             <textarea
               readOnly
               rows={6}
@@ -422,12 +515,12 @@ function DeckEditorScreen({
         )}
       </section>
 
-      <section style={{ marginTop: '16px' }}>
+      <section>
         <button onClick={() => { setShowImport((v) => !v); setImportError(''); }}>
           Import JSON
         </button>
         {showImport && (
-          <div style={{ marginTop: '8px' }}>
+          <div style={{ marginTop: 'var(--space-2)' }}>
             <textarea
               rows={6}
               style={{ width: '100%', fontFamily: 'monospace', fontSize: '12px' }}
@@ -435,8 +528,9 @@ function DeckEditorScreen({
               value={importJsonText}
               onChange={(e) => setImportJsonText(e.target.value)}
             />
-            <div style={{ marginTop: '4px' }}>
+            <div style={{ marginTop: 'var(--space-1)' }}>
               <button
+                className="btn-primary"
                 onClick={() => {
                   setImportError('');
                   const result = importDeck(state, importJsonText);
@@ -452,26 +546,26 @@ function DeckEditorScreen({
                 Import
               </button>
               {importError && (
-                <span style={{ color: 'red', marginLeft: '8px' }}>{importError}</span>
+                <span className="error-text" style={{ marginLeft: 'var(--space-2)' }}>{importError}</span>
               )}
             </div>
           </div>
         )}
       </section>
 
-      <section style={{ marginTop: '16px' }}>
+      <section>
         <div>
           <label htmlFor="paste-notes">Paste notes (term: definition, one per line)</label>
         </div>
         <textarea
           id="paste-notes"
           rows={6}
-          style={{ width: '100%', marginTop: '4px', fontFamily: 'monospace', fontSize: '12px' }}
+          style={{ width: '100%', marginTop: 'var(--space-1)', fontFamily: 'monospace', fontSize: '12px' }}
           value={notesText}
           onChange={(e) => setNotesText(e.target.value)}
         />
         <button
-          style={{ marginTop: '4px' }}
+          style={{ marginTop: 'var(--space-1)' }}
           onClick={() => {
             setDraftError('');
             const generated = parsePlainText(notesText, deckId, day, () => crypto.randomUUID());
@@ -482,9 +576,9 @@ function DeckEditorScreen({
         </button>
 
         {draftCards.length > 0 && (
-          <div style={{ marginTop: '8px' }}>
+          <div style={{ marginTop: 'var(--space-2)' }}>
             {draftCards.map((card, idx) => (
-              <div key={card.id} style={{ display: 'flex', gap: '8px', margin: '4px 0', alignItems: 'center' }}>
+              <div key={card.id} style={{ display: 'flex', gap: 'var(--space-2)', margin: 'var(--space-1) 0', alignItems: 'center' }}>
                 <input
                   type="text"
                   value={card.prompt}
@@ -519,7 +613,7 @@ function DeckEditorScreen({
             ))}
 
             <button
-              style={{ marginTop: '8px' }}
+              style={{ marginTop: 'var(--space-2)' }}
               onClick={() => {
                 setDraftError('');
                 // Validate all draft cards before persisting any
@@ -548,7 +642,7 @@ function DeckEditorScreen({
               Save all
             </button>
             {draftError && (
-              <span style={{ color: 'red', marginLeft: '8px' }}>{draftError}</span>
+              <span className="error-text" style={{ marginLeft: 'var(--space-2)' }}>{draftError}</span>
             )}
           </div>
         )}
@@ -599,6 +693,10 @@ function StudyScreen({
     buildInitialSession(deckCards, day),
   );
 
+  // Card feedback animations
+  const [cardAnim, setCardAnim] = useState<'idle' | 'exit-correct' | 'shake'>('idle');
+  const [bansheeRipple, setBansheeRipple] = useState(false);
+
   // Keep a ref to the latest state so the answer handler always uses fresh state
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -609,57 +707,105 @@ function StudyScreen({
     const card = current;
     if (!card) return;
 
-    // Update engine state: card, monsters, streak, defeated
-    const updatedCard = reviewCard(card, correct, day);
-    let next: AppState = {
-      ...stateRef.current,
-      cards: stateRef.current.cards.map((c) => c.id === card.id ? updatedCard : c),
-      monsters: reduceMonsters(stateRef.current.monsters, { type: 'answer', correct }),
-      streak: recordStudy(stateRef.current.streak, day),
-    };
-    next = updateDefeated(next, day);
-    onStateChange(next);
+    if (correct) {
+      // Slide card left and fade, then update engine state
+      setCardAnim('exit-correct');
+      setTimeout(() => {
+        const updatedCard = reviewCard(card, correct, day);
+        let next: AppState = {
+          ...stateRef.current,
+          cards: stateRef.current.cards.map((c) => c.id === card.id ? updatedCard : c),
+          monsters: reduceMonsters(stateRef.current.monsters, { type: 'answer', correct }),
+          streak: recordStudy(stateRef.current.streak, day),
+        };
+        next = updateDefeated(next, day);
+        onStateChange(next);
 
-    // Update session
-    setSession((prev) => {
-      const newMissed = new Set(prev.missed);
-      const newRetried = new Set(prev.retried);
-      const newCorrectIds = new Set(prev.correctIds);
-      const newWrongIds = new Set(prev.wrongIds);
-      let newQueue = prev.queue;
-      let nextIndex = prev.currentIndex + 1;
+        setSession((prev) => {
+          const newMissed = new Set(prev.missed);
+          const newRetried = new Set(prev.retried);
+          const newCorrectIds = new Set(prev.correctIds);
+          const newWrongIds = new Set(prev.wrongIds);
+          let newQueue = prev.queue;
+          let nextIndex = prev.currentIndex + 1;
 
-      // Track distinct outcome per card: a card's final answer determines its bucket
-      if (correct) {
-        newCorrectIds.add(card.id);
-        newWrongIds.delete(card.id);
-      } else {
+          newCorrectIds.add(card.id);
+          newWrongIds.delete(card.id);
+
+          if (nextIndex >= newQueue.length) {
+            const toRetry = prev.queue
+              .filter((c) => newMissed.has(c.id) && !newRetried.has(c.id));
+            toRetry.forEach((c) => newRetried.add(c.id));
+            if (toRetry.length > 0) {
+              newQueue = [...newQueue, ...toRetry];
+            }
+          }
+
+          return {
+            ...prev,
+            queue: newQueue,
+            currentIndex: nextIndex,
+            missed: newMissed,
+            retried: newRetried,
+            correctIds: newCorrectIds,
+            wrongIds: newWrongIds,
+            shown: false,
+          };
+        });
+
+        setCardAnim('idle');
+      }, 300);
+    } else {
+      // Shake card, trigger banshee ripple, then update engine state immediately
+      setCardAnim('shake');
+      setBansheeRipple(true);
+
+      const updatedCard = reviewCard(card, correct, day);
+      let next: AppState = {
+        ...stateRef.current,
+        cards: stateRef.current.cards.map((c) => c.id === card.id ? updatedCard : c),
+        monsters: reduceMonsters(stateRef.current.monsters, { type: 'answer', correct }),
+        streak: recordStudy(stateRef.current.streak, day),
+      };
+      next = updateDefeated(next, day);
+      onStateChange(next);
+
+      setSession((prev) => {
+        const newMissed = new Set(prev.missed);
+        const newRetried = new Set(prev.retried);
+        const newCorrectIds = new Set(prev.correctIds);
+        const newWrongIds = new Set(prev.wrongIds);
+        let newQueue = prev.queue;
+        let nextIndex = prev.currentIndex + 1;
+
         newMissed.add(card.id);
         newWrongIds.add(card.id);
         newCorrectIds.delete(card.id);
-      }
 
-      // When we exhaust the original queue, append missed-but-not-yet-retried cards
-      if (nextIndex >= newQueue.length) {
-        const toRetry = prev.queue
-          .filter((c) => newMissed.has(c.id) && !newRetried.has(c.id));
-        toRetry.forEach((c) => newRetried.add(c.id));
-        if (toRetry.length > 0) {
-          newQueue = [...newQueue, ...toRetry];
+        if (nextIndex >= newQueue.length) {
+          const toRetry = prev.queue
+            .filter((c) => newMissed.has(c.id) && !newRetried.has(c.id));
+          toRetry.forEach((c) => newRetried.add(c.id));
+          if (toRetry.length > 0) {
+            newQueue = [...newQueue, ...toRetry];
+          }
         }
-      }
 
-      return {
-        ...prev,
-        queue: newQueue,
-        currentIndex: nextIndex,
-        missed: newMissed,
-        retried: newRetried,
-        correctIds: newCorrectIds,
-        wrongIds: newWrongIds,
-        shown: false,
-      };
-    });
+        return {
+          ...prev,
+          queue: newQueue,
+          currentIndex: nextIndex,
+          missed: newMissed,
+          retried: newRetried,
+          correctIds: newCorrectIds,
+          wrongIds: newWrongIds,
+          shown: false,
+        };
+      });
+
+      setTimeout(() => setCardAnim('idle'), 200);
+      setTimeout(() => setBansheeRipple(false), 350);
+    }
   }
 
   // Navigate to results when queue is exhausted
@@ -675,7 +821,7 @@ function StudyScreen({
 
   if (session.queue.length === 0) {
     return (
-      <main>
+      <main className="screen-content">
         <button onClick={() => onNavigate({ name: 'home' })}>Back</button>
         <p>No cards due in this deck.</p>
       </main>
@@ -686,19 +832,28 @@ function StudyScreen({
 
   const position = `${session.currentIndex + 1} / ${session.queue.length}`;
 
+  const cardClassName = [
+    'study-card',
+    cardAnim === 'exit-correct' ? 'card-exit-correct' : '',
+    cardAnim === 'shake' ? 'card-shake' : '',
+  ].filter(Boolean).join(' ');
+
   return (
-    <main>
+    <main className="screen-content">
+      {/* Banshee ripple lives here; monsters overlay the full viewport */}
+      <MonsterPanel state={state} day={day} bansheeRipple={bansheeRipple} />
+
       <button onClick={() => onNavigate({ name: 'home' })}>Back to decks</button>
       <h2>Study session</h2>
       <p>Card {position}</p>
-      <section style={{ padding: '16px', border: '1px solid #ccc', margin: '16px 0' }}>
-        <p style={{ fontSize: '1.2em' }}>{current.prompt}</p>
+      <section className={cardClassName}>
+        <p className="card-prompt">{current.prompt}</p>
         {session.shown ? (
           <>
-            <p><strong>{current.answer}</strong></p>
-            <button onClick={() => handleAnswer(true)}>Correct</button>
+            <p className="card-answer">{current.answer}</p>
+            <button className="btn-primary" onClick={() => handleAnswer(true)}>Correct</button>
             {' '}
-            <button onClick={() => handleAnswer(false)}>Wrong</button>
+            <button className="btn-danger" onClick={() => handleAnswer(false)}>Wrong</button>
           </>
         ) : (
           <button onClick={() => setSession((s) => ({ ...s, shown: true }))}>
@@ -722,16 +877,16 @@ function ResultsScreen({
   onNavigate: (s: Screen) => void;
 }) {
   return (
-    <main>
+    <main className="screen-content">
       <h2>Session complete</h2>
       <p>Cards studied: {correct + wrong}</p>
       <p>Correct: {correct}</p>
       <p>Wrong: {wrong}</p>
-      <p>Current streak: {state.streak.current} day(s)</p>
+      <p>Current streak: <span className="streak-value">{state.streak.current}</span> day(s)</p>
 
-      <MonsterPanel state={state} day={day} />
+      <MonsterPanel state={state} day={day} bansheeRipple={false} />
 
-      <button onClick={() => onNavigate({ name: 'home' })}>Back to decks</button>
+      <button className="btn-primary" onClick={() => onNavigate({ name: 'home' })}>Back to decks</button>
     </main>
   );
 }
@@ -752,7 +907,7 @@ function BestiaryScreen({
   const dormant = views.filter((v) => !v.active && !defeatedSet.has(v.id));
 
   return (
-    <main>
+    <main className="screen-content">
       <button onClick={() => onNavigate({ name: 'home' })}>Back</button>
       <h2>Bestiary</h2>
 
@@ -761,7 +916,10 @@ function BestiaryScreen({
         {defeated.length === 0
           ? <p>None yet.</p>
           : defeated.map((v) => (
-            <div key={v.id}>{MONSTER_NAMES[v.id]} — Defeated</div>
+            <div key={v.id} className="bestiary-entry">
+              {MONSTER_NAMES[v.id]}
+              <span className="badge-defeated">Defeated</span>
+            </div>
           ))}
       </section>
 
@@ -770,7 +928,13 @@ function BestiaryScreen({
         {active.length === 0
           ? <p>None active.</p>
           : active.map((v) => (
-            <div key={v.id}>{MONSTER_NAMES[v.id]} — strength {v.strength}</div>
+            <div key={v.id} className="bestiary-entry">
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
+                <span>{MONSTER_NAMES[v.id]}</span>
+                <span className="muted">strength {v.strength}/100</span>
+              </div>
+              <progress className="monster-bar" max={100} value={v.strength} />
+            </div>
           ))}
       </section>
 
@@ -779,7 +943,10 @@ function BestiaryScreen({
         {dormant.length === 0
           ? <p>None dormant.</p>
           : dormant.map((v) => (
-            <div key={v.id}>{MONSTER_NAMES[v.id]} — dormant</div>
+            <div key={v.id} className="bestiary-entry">
+              <span>{MONSTER_NAMES[v.id]}</span>
+              <span className="muted" style={{ marginLeft: 'var(--space-2)' }}>— dormant</span>
+            </div>
           ))}
       </section>
     </main>
@@ -799,7 +966,7 @@ function ProgressScreen({
   const masteredPct = totalCards === 0 ? 0 : Math.round((totalMastered / totalCards) * 100);
 
   return (
-    <main>
+    <main className="screen-content">
       <button onClick={() => onNavigate({ name: 'home' })}>Back</button>
       <h2>Progress</h2>
 
@@ -807,8 +974,8 @@ function ProgressScreen({
         <h3>Overall</h3>
         <p>Total cards: {totalCards}</p>
         <p>Mastered: {totalMastered} ({masteredPct}%)</p>
-        <p>Current streak: {state.streak.current} day(s)</p>
-        <p>Best streak: {state.streak.best} day(s)</p>
+        <p>Current streak: <span className="streak-value">{state.streak.current}</span> day(s)</p>
+        <p>Best streak: <span className="streak-value">{state.streak.best}</span> day(s)</p>
       </section>
 
       <section>
@@ -823,16 +990,34 @@ function ProgressScreen({
             ? (daysLeft >= 0 ? `Exam in ${daysLeft} day(s)` : 'Exam passed')
             : '';
           return (
-            <div key={deck.id} style={{ margin: '12px 0', padding: '8px', border: '1px solid #ddd' }}>
-              <strong>{deck.name}</strong>
-              {examLabel && <span style={{ marginLeft: '8px' }}>({examLabel})</span>}
-              <div>
-                {BOXES.map((box) => {
-                  const count = cards.filter((c) => c.box === box).length;
-                  return <span key={box} style={{ marginRight: '12px' }}>Box {box}: {count}</span>;
-                })}
+            <div key={deck.id} className="progress-deck-entry">
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
+                <strong>{deck.name}</strong>
+                {examLabel && <span className="muted">{examLabel}</span>}
               </div>
-              <div>Mastered: {deckMastered} / {cards.length} ({deckPct}%)</div>
+              {/* Box breakdown as a small bar chart */}
+              <div style={{ marginBottom: 'var(--space-2)' }}>
+                <div className="box-chart">
+                  {BOXES.map((box) => {
+                    const count = cards.filter((c) => c.box === box).length;
+                    const maxCount = Math.max(1, cards.length);
+                    const widthPct = Math.round((count / maxCount) * 100);
+                    return (
+                      <div key={box} className="box-bar-label">
+                        <div
+                          className="box-bar"
+                          style={{ width: `${Math.max(widthPct, 4)}px` }}
+                          title={`Box ${box}: ${count}`}
+                        />
+                        <span>B{box}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="muted" style={{ fontSize: '14px' }}>
+                Mastered: {deckMastered} / {cards.length} ({deckPct}%)
+              </div>
             </div>
           );
         })}
@@ -859,73 +1044,63 @@ export function App() {
     setScreen(s);
   }, []);
 
-  if (screen.name === 'home') {
-    return (
-      <HomeScreen
-        state={state}
-        day={day}
-        onNavigate={handleNavigate}
-        onStateChange={handleStateChange}
-      />
-    );
-  }
+  return (
+    <div className="app-root">
+      <Scene />
+      {screen.name === 'home' && (
+        <HomeScreen
+          state={state}
+          day={day}
+          onNavigate={handleNavigate}
+          onStateChange={handleStateChange}
+        />
+      )}
 
-  if (screen.name === 'editor') {
-    return (
-      <DeckEditorScreen
-        state={state}
-        day={day}
-        deckId={screen.deckId}
-        onNavigate={handleNavigate}
-        onStateChange={handleStateChange}
-      />
-    );
-  }
+      {screen.name === 'editor' && (
+        <DeckEditorScreen
+          state={state}
+          day={day}
+          deckId={screen.deckId}
+          onNavigate={handleNavigate}
+          onStateChange={handleStateChange}
+        />
+      )}
 
-  if (screen.name === 'study') {
-    return (
-      <StudyScreen
-        state={state}
-        day={day}
-        deckId={screen.deckId}
-        onNavigate={handleNavigate}
-        onStateChange={handleStateChange}
-      />
-    );
-  }
+      {screen.name === 'study' && (
+        <StudyScreen
+          state={state}
+          day={day}
+          deckId={screen.deckId}
+          onNavigate={handleNavigate}
+          onStateChange={handleStateChange}
+        />
+      )}
 
-  if (screen.name === 'results') {
-    return (
-      <ResultsScreen
-        state={state}
-        day={day}
-        correct={screen.correct}
-        wrong={screen.wrong}
-        onNavigate={handleNavigate}
-      />
-    );
-  }
+      {screen.name === 'results' && (
+        <ResultsScreen
+          state={state}
+          day={day}
+          correct={screen.correct}
+          wrong={screen.wrong}
+          onNavigate={handleNavigate}
+        />
+      )}
 
-  if (screen.name === 'bestiary') {
-    return (
-      <BestiaryScreen
-        state={state}
-        day={day}
-        onNavigate={handleNavigate}
-      />
-    );
-  }
+      {screen.name === 'bestiary' && (
+        <BestiaryScreen
+          state={state}
+          day={day}
+          onNavigate={handleNavigate}
+        />
+      )}
 
-  if (screen.name === 'progress') {
-    return (
-      <ProgressScreen
-        state={state}
-        day={day}
-        onNavigate={handleNavigate}
-      />
-    );
-  }
-
-  // Exhaustive: all screen names handled above
-  return null;
+      {screen.name === 'progress' && (
+        <ProgressScreen
+          state={state}
+          day={day}
+          onNavigate={handleNavigate}
+        />
+      )}
+    </div>
+  );
 }
