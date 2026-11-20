@@ -1,0 +1,8 @@
+{
+  "verdict": "APPROVED",
+  "findings": [
+    "Fog-pull-back missing on correct answer — The art-direction spec lists 'fog pulls back slightly' as part of the correct-answer animation (300 ms). The card slides and fades but the Scene fog band is unchanged. Add a brief CSS class toggled on the fog rect for one cycle, or update the spec to reflect current behaviour.",
+    "check:faces scope gap — The automated faces check covers src/presentation/ and public/ but not src/ui/. Scene.tsx (85 star circles, moon disc) lives in src/ui/components/ and is not scanned. Manual review confirms it is clean, but future changes here bypass automated detection. Consider widening ROOTS in scripts/check-no-faces.mjs to include src/ui/."
+  ],
+  "reviewDoc": "/Users/family/Documents/cryptid-study-quest/.agents/tasks/phase-6-art/review.md"
+}
