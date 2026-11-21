@@ -240,7 +240,8 @@ function HomeScreen({
 
       <section>
         <h2>Decks</h2>
-        {state.decks.length === 0 ? (
+        {state.decks.length === 0 && !showNewDeck ? (
+          // Empty state: no decks and form not open yet
           <div className="empty-state">
             <p>No decks yet. Create one to begin.</p>
             <button
@@ -251,7 +252,25 @@ function HomeScreen({
               New Deck
             </button>
           </div>
+        ) : state.decks.length === 0 && showNewDeck ? (
+          // Empty state with form open: replace the empty-state block with the form
+          <form onSubmit={handleCreateDeck} style={{ marginTop: 'var(--space-2)' }}>
+            <input
+              type="text"
+              placeholder="Deck name"
+              value={newDeckName}
+              onChange={(e) => setNewDeckName(e.target.value)}
+              autoFocus
+            />
+            {' '}
+            <button type="submit" className="btn-primary">Create</button>
+            {' '}
+            <button type="button" onClick={() => { setShowNewDeck(false); setNewDeckName(''); }}>
+              Cancel
+            </button>
+          </form>
         ) : (
+          // Decks exist: show list and new-deck toggle
           <>
             {state.decks.map((deck) => {
               const deckCards = state.cards.filter((c) => c.deckId === deck.id);
@@ -305,25 +324,6 @@ function HomeScreen({
               </button>
             )}
           </>
-        )}
-
-        {/* Show inline new-deck form even when deck list is empty (and button was clicked) */}
-        {state.decks.length === 0 && showNewDeck && (
-          <form onSubmit={handleCreateDeck} style={{ marginTop: 'var(--space-2)' }}>
-            <input
-              type="text"
-              placeholder="Deck name"
-              value={newDeckName}
-              onChange={(e) => setNewDeckName(e.target.value)}
-              autoFocus
-            />
-            {' '}
-            <button type="submit" className="btn-primary">Create</button>
-            {' '}
-            <button type="button" onClick={() => { setShowNewDeck(false); setNewDeckName(''); }}>
-              Cancel
-            </button>
-          </form>
         )}
       </section>
 
@@ -1106,8 +1106,9 @@ export function App() {
     return s;
   });
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
-  // Fog relief: set true on correct answer; Scene animates it and we reset after 1 s.
-  const [relief, setRelief] = useState(false);
+  // Fog relief: monotonically increasing counter; Scene fires its effect on every increment,
+  // so rapid consecutive correct answers each trigger a fresh animation.
+  const [reliefCount, setReliefCount] = useState(0);
 
   // Mark hydration complete after the first render frame.
   useEffect(() => { setHydrated(true); }, []);
@@ -1124,10 +1125,9 @@ export function App() {
   }, []);
 
   // Called by StudyScreen on a correct answer to trigger the fog pull-back.
+  // Using a counter so each correct answer fires the effect even in rapid succession.
   const handleRelief = useCallback(() => {
-    setRelief(true);
-    const t = setTimeout(() => setRelief(false), 1000);
-    return () => clearTimeout(t);
+    setReliefCount((n) => n + 1);
   }, []);
 
   if (!hydrated) {
@@ -1136,7 +1136,7 @@ export function App() {
 
   return (
     <div className="app-root">
-      <Scene relief={relief} />
+      <Scene relief={reliefCount} />
       {screen.name === 'home' && (
         <HomeScreen
           state={state}

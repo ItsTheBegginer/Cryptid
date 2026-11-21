@@ -4,24 +4,27 @@
  * Layers: sky → stars → moon glow → moon → far treeline → fog → near treeline
  * No identifying marks, no symmetric decorative pairs.
  *
- * relief prop: when true, the fog band briefly dims (correct-answer feedback).
+ * relief prop: a monotonically increasing counter; each increment triggers a fresh
+ * fog-dim animation (correct-answer feedback). Using a counter rather than a boolean
+ * ensures rapid consecutive correct answers each fire the effect.
  * Gated behind prefers-reduced-motion — under reduced-motion the opacity stays stable.
  */
 import { useEffect, useState } from 'react';
 
 interface SceneProps {
-  relief?: boolean;
+  relief?: number;
 }
 
-export function Scene({ relief = false }: SceneProps) {
-  // Fog opacity: normally 1; pulses down to 0.2 and back when relief fires.
+export function Scene({ relief = 0 }: SceneProps) {
+  // Fog opacity: normally 1; pulses down to 0.2 and back when relief increments.
   // Only applies when motion is acceptable — mediaReducedMotion check below.
   const [fogOpacity, setFogOpacity] = useState(1);
 
   useEffect(() => {
+    // Skip on initial mount (relief === 0 means no answer yet).
+    if (relief === 0) return;
     // Respect prefers-reduced-motion: skip the animation entirely if the user
     // has requested reduced motion.
-    if (!relief) return;
     const mq = window.matchMedia('(prefers-reduced-motion: no-preference)');
     if (!mq.matches) return;
 
@@ -77,7 +80,7 @@ export function Scene({ relief = false }: SceneProps) {
       {/* ── Layer 1: Sky ──────────────────────────────────────────────────── */}
       <rect x="0" y="0" width="1440" height="900" fill="#0a0d14" />
 
-      {/* ── Layer 2: Stars (50 circles, upper 2/3, hardcoded positions) ───── */}
+      {/* ── Layer 2: Stars (51 circles, upper 2/3, hardcoded positions) ───── */}
       {/* Stars distributed so no symmetric pair of two circles sit close together */}
       <circle cx="42"   cy="38"  r="1"   fill="#e8eaf0" opacity="0.5" />
       <circle cx="119"  cy="72"  r="1.5" fill="#e8eaf0" opacity="0.4" />
