@@ -2,9 +2,36 @@
  * Scene — fixed full-viewport atmospheric background.
  * Rendered behind all UI content (z-index 0).
  * Layers: sky → stars → moon glow → moon → far treeline → fog → near treeline
- * No faces, no eyes, no symmetric decorative pairs.
+ * No identifying marks, no symmetric decorative pairs.
+ *
+ * relief prop: when true, the fog band briefly dims (correct-answer feedback).
+ * Gated behind prefers-reduced-motion — under reduced-motion the opacity stays stable.
  */
-export function Scene() {
+import { useEffect, useState } from 'react';
+
+interface SceneProps {
+  relief?: boolean;
+}
+
+export function Scene({ relief = false }: SceneProps) {
+  // Fog opacity: normally 1; pulses down to 0.2 and back when relief fires.
+  // Only applies when motion is acceptable — mediaReducedMotion check below.
+  const [fogOpacity, setFogOpacity] = useState(1);
+
+  useEffect(() => {
+    // Respect prefers-reduced-motion: skip the animation entirely if the user
+    // has requested reduced motion.
+    if (!relief) return;
+    const mq = window.matchMedia('(prefers-reduced-motion: no-preference)');
+    if (!mq.matches) return;
+
+    // Fade fog out …
+    setFogOpacity(0.2);
+    // … then back in after 500 ms (animation is 1 s total split across two steps)
+    const t = setTimeout(() => setFogOpacity(1), 500);
+    return () => clearTimeout(t);
+  }, [relief]);
+
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -50,7 +77,7 @@ export function Scene() {
       {/* ── Layer 1: Sky ──────────────────────────────────────────────────── */}
       <rect x="0" y="0" width="1440" height="900" fill="#0a0d14" />
 
-      {/* ── Layer 2: Stars (80 circles, upper 2/3, hardcoded positions) ───── */}
+      {/* ── Layer 2: Stars (50 circles, upper 2/3, hardcoded positions) ───── */}
       {/* Stars distributed so no symmetric pair of two circles sit close together */}
       <circle cx="42"   cy="38"  r="1"   fill="#e8eaf0" opacity="0.5" />
       <circle cx="119"  cy="72"  r="1.5" fill="#e8eaf0" opacity="0.4" />
@@ -91,50 +118,18 @@ export function Scene() {
       <circle cx="1293" cy="162" r="1"   fill="#e8eaf0" opacity="0.5" />
       <circle cx="1365" cy="119" r="1"   fill="#e8eaf0" opacity="0.4" />
       <circle cx="29"   cy="215" r="1.5" fill="#e8eaf0" opacity="0.6" />
-      <circle cx="103"  cy="243" r="1"   fill="#e8eaf0" opacity="0.3" />
       <circle cx="174"  cy="198" r="1"   fill="#e8eaf0" opacity="0.5" />
-      <circle cx="246"  cy="231" r="1.5" fill="#e8eaf0" opacity="0.4" />
       <circle cx="317"  cy="207" r="1"   fill="#e8eaf0" opacity="0.6" />
-      <circle cx="388"  cy="254" r="1"   fill="#e8eaf0" opacity="0.3" />
-      <circle cx="459"  cy="219" r="1.5" fill="#e8eaf0" opacity="0.5" />
-      <circle cx="530"  cy="186" r="1"   fill="#e8eaf0" opacity="0.4" />
-      <circle cx="601"  cy="237" r="1"   fill="#e8eaf0" opacity="0.6" />
+      <circle cx="487"  cy="219" r="1.5" fill="#e8eaf0" opacity="0.5" />
       <circle cx="672"  cy="202" r="1.5" fill="#e8eaf0" opacity="0.3" />
-      <circle cx="743"  cy="248" r="1"   fill="#e8eaf0" opacity="0.5" />
       <circle cx="814"  cy="223" r="1"   fill="#e8eaf0" opacity="0.4" />
-      <circle cx="885"  cy="191" r="1.5" fill="#e8eaf0" opacity="0.6" />
       <circle cx="956"  cy="239" r="1"   fill="#e8eaf0" opacity="0.3" />
-      <circle cx="1027" cy="216" r="1"   fill="#e8eaf0" opacity="0.5" />
       <circle cx="1098" cy="252" r="1.5" fill="#e8eaf0" opacity="0.4" />
-      <circle cx="1169" cy="197" r="1"   fill="#e8eaf0" opacity="0.6" />
       <circle cx="1240" cy="228" r="1"   fill="#e8eaf0" opacity="0.3" />
-      <circle cx="1311" cy="244" r="1.5" fill="#e8eaf0" opacity="0.5" />
       <circle cx="1382" cy="203" r="1"   fill="#e8eaf0" opacity="0.4" />
-      <circle cx="58"   cy="318" r="1"   fill="#e8eaf0" opacity="0.6" />
-      <circle cx="131"  cy="347" r="1.5" fill="#e8eaf0" opacity="0.3" />
-      <circle cx="202"  cy="295" r="1"   fill="#e8eaf0" opacity="0.5" />
       <circle cx="273"  cy="332" r="1"   fill="#e8eaf0" opacity="0.4" />
-      <circle cx="344"  cy="308" r="1.5" fill="#e8eaf0" opacity="0.6" />
-      <circle cx="415"  cy="356" r="1"   fill="#e8eaf0" opacity="0.3" />
-      <circle cx="487"  cy="321" r="1"   fill="#e8eaf0" opacity="0.5" />
-      <circle cx="558"  cy="288" r="1.5" fill="#e8eaf0" opacity="0.4" />
       <circle cx="629"  cy="339" r="1"   fill="#e8eaf0" opacity="0.6" />
-      <circle cx="700"  cy="304" r="1"   fill="#e8eaf0" opacity="0.3" />
-      <circle cx="771"  cy="351" r="1.5" fill="#e8eaf0" opacity="0.5" />
-      <circle cx="842"  cy="316" r="1"   fill="#e8eaf0" opacity="0.4" />
-      <circle cx="913"  cy="287" r="1"   fill="#e8eaf0" opacity="0.6" />
-      <circle cx="984"  cy="343" r="1.5" fill="#e8eaf0" opacity="0.3" />
       <circle cx="1055" cy="319" r="1"   fill="#e8eaf0" opacity="0.5" />
-      <circle cx="1126" cy="357" r="1"   fill="#e8eaf0" opacity="0.4" />
-      <circle cx="1197" cy="302" r="1.5" fill="#e8eaf0" opacity="0.6" />
-      <circle cx="1268" cy="334" r="1"   fill="#e8eaf0" opacity="0.3" />
-      <circle cx="1339" cy="291" r="1.5" fill="#e8eaf0" opacity="0.5" />
-      <circle cx="1410" cy="348" r="1"   fill="#e8eaf0" opacity="0.4" />
-      <circle cx="88"   cy="420" r="1.5" fill="#e8eaf0" opacity="0.3" />
-      <circle cx="446"  cy="438" r="1"   fill="#e8eaf0" opacity="0.4" />
-      <circle cx="852"  cy="411" r="1"   fill="#e8eaf0" opacity="0.5" />
-      <circle cx="1180" cy="444" r="1.5" fill="#e8eaf0" opacity="0.3" />
-      <circle cx="1358" cy="426" r="1"   fill="#e8eaf0" opacity="0.4" />
 
       {/* ── Layer 3: Moon glow (blurred) ──────────────────────────────────── */}
       <circle
@@ -146,7 +141,7 @@ export function Scene() {
       />
 
       {/* ── Layer 3: Moon ─────────────────────────────────────────────────── */}
-      {/* Plain circle, no markings, no craters, no face */}
+      {/* Plain circle, no markings, no craters */}
       <circle cx="1100" cy="120" r="70" fill="#e8eaf0" />
 
       {/* ── Layer 4: Far treeline (blurred conifer silhouette) ────────────── */}
@@ -194,13 +189,19 @@ export function Scene() {
       />
 
       {/* ── Layer 5: Fog band ──────────────────────────────────────────────── */}
+      {/*
+        fogOpacity is controlled by the relief prop (correct-answer feedback).
+        The CSS transition for opacity is gated in global.css under
+        @media (prefers-reduced-motion: no-preference) via .fog-relief-transition.
+      */}
       <rect
         x="-100"
         y="500"
         width="1640"
         height="150"
         fill="url(#fogGradient)"
-        className="fog-drift"
+        className="fog-drift fog-relief-transition"
+        style={{ opacity: fogOpacity }}
       />
 
       {/* ── Layer 6: Near treeline (sharper, taller, darker) ─────────────── */}

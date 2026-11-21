@@ -2,7 +2,7 @@
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
-const ROOTS = ['src/presentation', 'public'];
+const ROOTS = ['src/presentation', 'src/ui', 'public'];
 const EXT = new Set(['.ts', '.tsx', '.css', '.svg', '.html', '.json', '.js']);
 const BANNED = /\b(eyes?|eyeball|eyebrows?|face|faces|facial|mouth|pupils?|iris|smile|grin|nostrils?|teeth)\b/i;
 

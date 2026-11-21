@@ -38,6 +38,7 @@ import { demoDeck } from './demoDeck';
 
 // ─── constants ────────────────────────────────────────────────────────────────
 const SAVE_KEY = 'cryptid-study-quest';
+const ONBOARDING_KEY = 'cryptid-study-quest-onboarding-dismissed';
 const BOXES: Box[] = [1, 2, 3, 4, 5];
 /** Upper bound for the study session queue. Large enough to never silently truncate a deck. */
 const SESSION_QUEUE_LIMIT = 1000;
@@ -161,6 +162,17 @@ function HomeScreen({
   const [newDeckName, setNewDeckName] = useState('');
   const [resetStep, setResetStep] = useState<'idle' | 'confirm'>('idle');
 
+  // Onboarding: shown on first load when there are no decks, dismissed permanently.
+  const [onboardingDismissed, setOnboardingDismissed] = useState(
+    () => !!localStorage.getItem(ONBOARDING_KEY),
+  );
+  const showOnboarding = state.decks.length === 0 && !onboardingDismissed;
+
+  function handleDismissOnboarding() {
+    localStorage.setItem(ONBOARDING_KEY, '1');
+    setOnboardingDismissed(true);
+  }
+
   // Streak pulse: apply class when streak increases
   const prevStreak = useRef(state.streak.current);
   const [streakPulse, setStreakPulse] = useState(false);
@@ -212,37 +224,91 @@ function HomeScreen({
 
       <MonsterPanel state={state} day={day} bansheeRipple={false} />
 
+      {/* First-run welcome panel — shown only when no decks exist and not yet dismissed */}
+      {showOnboarding && (
+        <div className="welcome-panel">
+          <h2>Welcome to Cryptid Study Quest</h2>
+          <p>
+            Study consistently to weaken the monsters lurking at the edge of the forest.
+            Neglect your cards and they grow stronger — cramming the night before only feeds them.
+          </p>
+          <button className="btn-primary" onClick={handleDismissOnboarding}>
+            Get started
+          </button>
+        </div>
+      )}
+
       <section>
         <h2>Decks</h2>
-        {state.decks.length === 0 && <p>No decks yet.</p>}
-        {state.decks.map((deck) => {
-          const deckCards = state.cards.filter((c) => c.deckId === deck.id);
-          const dueCount = buildQueue(deckCards, day, SESSION_QUEUE_LIMIT).length;
-          const daysLeft = deck.examDay !== null ? deck.examDay - day : null;
-          const examLabel = daysLeft !== null
-            ? (daysLeft >= 0 ? `Exam in ${daysLeft} day(s)` : 'Exam passed')
-            : 'No exam set';
-          return (
-            <div key={deck.id} className="deck-card">
-              <strong>{deck.name}</strong>
-              {' — '}
-              {deckCards.length} card(s), {dueCount} due, {examLabel}
-              {' '}
-              <button
-                className="btn-primary"
-                onClick={() => onNavigate({ name: 'study', deckId: deck.id })}
-              >
-                Study
-              </button>
-              {' '}
-              <button onClick={() => onNavigate({ name: 'editor', deckId: deck.id })}>
-                Edit
-              </button>
-            </div>
-          );
-        })}
+        {state.decks.length === 0 ? (
+          <div className="empty-state">
+            <p>No decks yet. Create one to begin.</p>
+            <button
+              className="btn-primary"
+              onClick={() => setShowNewDeck(true)}
+              style={{ marginTop: 'var(--space-3)' }}
+            >
+              New Deck
+            </button>
+          </div>
+        ) : (
+          <>
+            {state.decks.map((deck) => {
+              const deckCards = state.cards.filter((c) => c.deckId === deck.id);
+              const dueCount = buildQueue(deckCards, day, SESSION_QUEUE_LIMIT).length;
+              const daysLeft = deck.examDay !== null ? deck.examDay - day : null;
+              const examLabel = daysLeft !== null
+                ? (daysLeft >= 0 ? `Exam in ${daysLeft} day(s)` : 'Exam passed')
+                : 'No exam set';
+              return (
+                <div key={deck.id} className="deck-card">
+                  <strong>{deck.name}</strong>
+                  {' — '}
+                  {deckCards.length} card(s), {dueCount} due, {examLabel}
+                  {' '}
+                  <button
+                    className="btn-primary"
+                    onClick={() => onNavigate({ name: 'study', deckId: deck.id })}
+                  >
+                    Study
+                  </button>
+                  {' '}
+                  <button onClick={() => onNavigate({ name: 'editor', deckId: deck.id })}>
+                    Edit
+                  </button>
+                </div>
+              );
+            })}
 
-        {showNewDeck ? (
+            {showNewDeck ? (
+              <form onSubmit={handleCreateDeck} style={{ marginTop: 'var(--space-2)' }}>
+                <input
+                  type="text"
+                  placeholder="Deck name"
+                  value={newDeckName}
+                  onChange={(e) => setNewDeckName(e.target.value)}
+                  autoFocus
+                />
+                {' '}
+                <button type="submit" className="btn-primary">Create</button>
+                {' '}
+                <button type="button" onClick={() => { setShowNewDeck(false); setNewDeckName(''); }}>
+                  Cancel
+                </button>
+              </form>
+            ) : (
+              <button
+                onClick={() => setShowNewDeck(true)}
+                style={{ marginTop: 'var(--space-2)' }}
+              >
+                New deck
+              </button>
+            )}
+          </>
+        )}
+
+        {/* Show inline new-deck form even when deck list is empty (and button was clicked) */}
+        {state.decks.length === 0 && showNewDeck && (
           <form onSubmit={handleCreateDeck} style={{ marginTop: 'var(--space-2)' }}>
             <input
               type="text"
@@ -258,13 +324,6 @@ function HomeScreen({
               Cancel
             </button>
           </form>
-        ) : (
-          <button
-            onClick={() => setShowNewDeck(true)}
-            style={{ marginTop: 'var(--space-2)' }}
-          >
-            New deck
-          </button>
         )}
       </section>
 
@@ -675,13 +734,14 @@ function buildInitialSession(cards: Card[], day: number): SessionState {
 }
 
 function StudyScreen({
-  state, day, deckId, onNavigate, onStateChange,
+  state, day, deckId, onNavigate, onStateChange, onRelief,
 }: {
   state: AppState;
   day: number;
   deckId: string;
   onNavigate: (s: Screen) => void;
   onStateChange: (s: AppState) => void;
+  onRelief: () => void;
 }) {
   const deckCards = useMemo(
     () => state.cards.filter((c) => c.deckId === deckId),
@@ -708,8 +768,9 @@ function StudyScreen({
     if (!card) return;
 
     if (correct) {
-      // Slide card left and fade, then update engine state
+      // Slide card left and fade, then update engine state; also pull fog back
       setCardAnim('exit-correct');
+      onRelief();
       setTimeout(() => {
         const updatedCard = reviewCard(card, correct, day);
         let next: AppState = {
@@ -823,7 +884,9 @@ function StudyScreen({
     return (
       <main className="screen-content">
         <button onClick={() => onNavigate({ name: 'home' })}>Back</button>
-        <p>No cards due in this deck.</p>
+        <div className="empty-state">
+          <p>Nothing due today. Come back tomorrow!</p>
+        </div>
       </main>
     );
   }
@@ -914,7 +977,7 @@ function BestiaryScreen({
       <section>
         <h3>Defeated</h3>
         {defeated.length === 0
-          ? <p>None yet.</p>
+          ? <p className="empty-state">No monsters defeated yet. Keep studying.</p>
           : defeated.map((v) => (
             <div key={v.id} className="bestiary-entry">
               {MONSTER_NAMES[v.id]}
@@ -969,6 +1032,12 @@ function ProgressScreen({
     <main className="screen-content">
       <button onClick={() => onNavigate({ name: 'home' })}>Back</button>
       <h2>Progress</h2>
+
+      {totalCards === 0 && (
+        <div className="empty-state">
+          <p>Add cards to a deck to see your progress.</p>
+        </div>
+      )}
 
       <section>
         <h3>Overall</h3>
@@ -1030,8 +1099,18 @@ function ProgressScreen({
 export function App() {
   // TODO(phase 4): refresh day on visibility change so engine calls use the correct date after midnight
   const day = useMemo(() => today(), []);
-  const [state, setState] = useState<AppState>(() => loadState(day));
+  // One-frame loading guard: hydrate state before first paint to avoid unstyled flash.
+  const [hydrated, setHydrated] = useState(false);
+  const [state, setState] = useState<AppState>(() => {
+    const s = loadState(day);
+    return s;
+  });
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
+  // Fog relief: set true on correct answer; Scene animates it and we reset after 1 s.
+  const [relief, setRelief] = useState(false);
+
+  // Mark hydration complete after the first render frame.
+  useEffect(() => { setHydrated(true); }, []);
 
   // Persist on every state change
   useEffect(() => { persist(state); }, [state]);
@@ -1044,9 +1123,20 @@ export function App() {
     setScreen(s);
   }, []);
 
+  // Called by StudyScreen on a correct answer to trigger the fog pull-back.
+  const handleRelief = useCallback(() => {
+    setRelief(true);
+    const t = setTimeout(() => setRelief(false), 1000);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (!hydrated) {
+    return <div className="loading-screen" aria-hidden="true" />;
+  }
+
   return (
     <div className="app-root">
-      <Scene />
+      <Scene relief={relief} />
       {screen.name === 'home' && (
         <HomeScreen
           state={state}
@@ -1073,6 +1163,7 @@ export function App() {
           deckId={screen.deckId}
           onNavigate={handleNavigate}
           onStateChange={handleStateChange}
+          onRelief={handleRelief}
         />
       )}
 
