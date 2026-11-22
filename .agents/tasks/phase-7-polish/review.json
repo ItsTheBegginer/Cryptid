@@ -1,0 +1,9 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "findings": [
+    "Empty-state 'New Deck' button not hidden on form open — when decks.length === 0 and showNewDeck becomes true, the empty-state block (and its button) remains visible alongside the inline form. Fold the form into the ternary so it replaces the empty-state block when showNewDeck is true.",
+    "Relief skips on rapid correct answers — setRelief(true) is a no-op when relief is already true, so the fog won't re-dim for a second consecutive correct answer within 1 s. Use a counter dependency (reliefCount) instead of a boolean.",
+    "Star comment off by one — comment reads '50 circles' but 51 star <circle> elements are present (confirmed by count). Update the comment to '51 circles'."
+  ],
+  "reviewDoc": "/Users/family/Documents/cryptid-study-quest/.agents/tasks/phase-7-polish/review.md"
+}
